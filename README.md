@@ -46,7 +46,7 @@ ollama pull gpt-oss:20b
 
 ### 3. Run the GUI
 ```bash
-python oss-GUI.py
+python obp-GUI.py
 # Access at http://localhost:5000
 # Phone access at http://[your-ip]:5000
 ```
@@ -70,13 +70,13 @@ Power user command-line interface:
 
 ```bash
 # Add tasks from file
-python oss-CLI.py --add-file tasks.txt
+python obp-CLI.py --add-file tasks.txt
 
 # Process overnight
-python oss-CLI.py --run
+python obp-CLI.py --run
 
 # Start API for remote access
-python oss-CLI.py --api
+python obp-CLI.py --api
 ```
 
 ## 📝 Task Format
@@ -170,15 +170,15 @@ docker run -p 5000:5000 oss-processor
 
 ### GUI Commands
 ```bash
-python oss-GUI.py           # Start web interface
+python obp-GUI.py           # Start web interface
 ```
 
 ### CLI Commands
 ```bash
-python oss-CLI.py --add-file tasks.txt   # Add tasks
-python oss-CLI.py --run                  # Process tasks
-python oss-CLI.py --status               # Check queue
-python oss-CLI.py --api                  # Start API server
+python obp-CLI.py --add-file tasks.txt   # Add tasks
+python obp-CLI.py --run                  # Process tasks
+python obp-CLI.py --status               # Check queue
+python obp-CLI.py --api                  # Start API server
 ```
 
 ### Make Commands (Unix/Mac/Linux)
@@ -192,8 +192,8 @@ make demo         # Run demo tasks
 ## 📂 Project Structure
 ```
 oss-batch-processor/
-├── oss-GUI.py              # Web interface
-├── oss-CLI.py              # Command line interface
+├── obp-GUI.py              # Web interface
+├── obp-CLI.py              # Command line interface
 ├── install.py              # Interactive installer
 ├── requirements.txt        # Dependencies
 ├── processor_config.yaml   # Configuration
@@ -237,7 +237,7 @@ ollama serve
 
 **Night (11 PM):** Start processing before bed
 ```bash
-python oss-CLI.py --run
+python obp-CLI.py --run
 ```
 
 **Morning (7 AM):** Review completed work over coffee
