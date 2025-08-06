@@ -1,0 +1,150 @@
+# OSS Batch Processor Makefile
+# Usage: make [target]
+
+.PHONY: help install install-minimal install-dev clean run-gui run-cli test lint format check-ollama
+
+# Default target
+help:
+	@echo "OSS Batch Processor - Make Commands"
+	@echo "===================================="
+	@echo "Installation:"
+	@echo "  make install          - Install recommended dependencies"
+	@echo "  make install-minimal  - Install only essential dependencies"
+	@echo "  make install-dev      - Install with development tools"
+	@echo ""
+	@echo "Running:"
+	@echo "  make run-gui          - Start GUI server (oss-GUI.py)"
+	@echo "  make run-cli          - Run CLI version (oss-CLI.py)"
+	@echo "  make run-api          - Start CLI with API server"
+	@echo ""
+	@echo "Development:"
+	@echo "  make test            - Run tests"
+	@echo "  make lint            - Run linters"
+	@echo "  make format          - Format code with black"
+	@echo "  make clean           - Remove cache and temporary files"
+	@echo ""
+	@echo "Utilities:"
+	@echo "  make check-ollama    - Check if Ollama is running"
+	@echo "  make setup           - Complete setup (install + directories)"
+	@echo "  make demo            - Run with demo tasks"
+
+# Installation targets
+install:
+	@echo "Installing recommended dependencies..."
+	pip install requests PyYAML Flask Flask-Cors python-dotenv colorlog schedule watchdog
+
+install-minimal:
+	@echo "Installing minimal dependencies..."
+	pip install requests PyYAML Flask Flask-Cors
+
+install-dev: install
+	@echo "Installing development dependencies..."
+	pip install black isort flake8 pylint mypy pytest pytest-cov
+
+# Setup
+setup: install
+	@echo "Creating directories..."
+	@mkdir -p results task_configs workspace logs
+	@echo "Creating .env template..."
+	@if [ ! -f .env ]; then \
+		echo "# API Keys (optional)" > .env; \
+		echo "# SERPER_API_KEY=your_key_here" >> .env; \
+		echo "# TAVILY_API_KEY=your_key_here" >> .env; \
+	fi
+	@echo "Setup complete!"
+
+# Running targets
+run-gui:
+	@echo "Starting GUI server..."
+	@echo "Access at: http://localhost:5000"
+	@python oss-GUI.py
+
+run-cli:
+	@echo "Starting CLI processor..."
+	@python oss-CLI.py --run
+
+run-api:
+	@echo "Starting CLI with API server..."
+	@python oss-CLI.py --api
+
+# Demo
+demo:
+	@echo "Creating demo tasks..."
+	@echo "{process}" > demo_tasks.txt
+	@echo "Make this joke funnier: Why don't scientists trust atoms? Because they make up everything!" >> demo_tasks.txt
+	@echo "" >> demo_tasks.txt
+	@echo "{create}" >> demo_tasks.txt
+	@echo "Write a haiku about artificial intelligence" >> demo_tasks.txt
+	@echo "" >> demo_tasks.txt
+	@echo "{code}" >> demo_tasks.txt
+	@echo "language=python::Write a function to calculate fibonacci numbers" >> demo_tasks.txt
+	@echo "Adding demo tasks to queue..."
+	@python oss-CLI.py --add-file demo_tasks.txt
+	@echo "Starting processing..."
+	@python oss-CLI.py --run
+
+# Development targets
+test:
+	@echo "Running tests..."
+	@pytest tests/ -v --cov=.
+
+lint:
+	@echo "Running linters..."
+	@flake8 oss-CLI.py oss-GUI.py --max-line-length=120
+	@pylint oss-CLI.py oss-GUI.py
+
+format:
+	@echo "Formatting code..."
+	@black oss-CLI.py oss-GUI.py --line-length=120
+	@isort oss-CLI.py oss-GUI.py
+
+# Utilities
+check-ollama:
+	@echo "Checking Ollama status..."
+	@curl -s http://localhost:11434/api/tags > /dev/null 2>&1 && \
+		echo "✅ Ollama is running" || \
+		echo "❌ Ollama is not running. Start with: ollama serve"
+
+clean:
+	@echo "Cleaning up..."
+	@rm -rf __pycache__ *.pyc *.pyo
+	@rm -rf .pytest_cache .coverage
+	@rm -rf *.log
+	@echo "Clean complete!"
+
+# Database utilities
+db-stats:
+	@python oss-CLI.py --db-stats
+
+db-backup:
+	@echo "Backing up database..."
+	@cp task_processor.db task_processor.db.backup
+	@echo "Backup saved to task_processor.db.backup"
+
+db-reset:
+	@echo "⚠️  This will delete all tasks and history!"
+	@read -p "Are you sure? (y/N): " confirm && \
+	if [ "$$confirm" = "y" ]; then \
+		rm -f task_processor.db task_queue.json; \
+		echo "Database reset complete"; \
+	else \
+		echo "Cancelled"; \
+	fi
+
+# Docker support (optional)
+docker-build:
+	@echo "Building Docker image..."
+	@docker build -t oss-processor .
+
+docker-run:
+	@echo "Running in Docker..."
+	@docker run -p 5000:5000 -v $(PWD)/results:/app/results oss-processor
+
+# System info
+info:
+	@echo "System Information:"
+	@echo "==================="
+	@python --version
+	@pip --version
+	@echo "Installed packages:"
+	@pip list | grep -E "requests|PyYAML|Flask|flask-cors"

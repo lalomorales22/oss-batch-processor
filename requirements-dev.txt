@@ -1,0 +1,87 @@
+# Development requirements for OSS Batch Processor
+# Install with: pip install -r requirements.txt -r requirements-dev.txt
+
+# ==========================================
+# CODE QUALITY
+# ==========================================
+
+# Code formatting
+black>=23.0.0
+isort>=5.12.0
+
+# Linting
+flake8>=6.1.0
+pylint>=3.0.0
+
+# Type checking
+mypy>=1.0.0
+types-requests>=2.31.0
+types-PyYAML>=6.0.0
+
+# ==========================================
+# TESTING
+# ==========================================
+
+# Test framework
+pytest>=7.4.0
+pytest-cov>=4.1.0
+pytest-asyncio>=0.21.0
+pytest-mock>=3.12.0
+
+# Test utilities
+faker>=20.0.0
+factory-boy>=3.3.0
+
+# HTTP mocking
+responses>=0.24.0
+requests-mock>=1.11.0
+
+# ==========================================
+# DOCUMENTATION
+# ==========================================
+
+# Documentation generation
+sphinx>=7.2.0
+sphinx-rtd-theme>=2.0.0
+sphinx-autodoc-typehints>=1.25.0
+
+# Markdown support
+recommonmark>=0.7.1
+
+# ==========================================
+# DEBUGGING & PROFILING
+# ==========================================
+
+# Interactive debugging
+ipdb>=0.13.13
+ipython>=8.17.0
+
+# Profiling
+memory-profiler>=0.61.0
+line-profiler>=4.1.0
+
+# ==========================================
+# BUILD & DISTRIBUTION
+# ==========================================
+
+# Package building
+build>=1.0.0
+setuptools>=69.0.0
+wheel>=0.42.0
+
+# Version management
+bump2version>=1.0.1
+
+# ==========================================
+# SECURITY SCANNING
+# ==========================================
+
+# Security vulnerability scanning
+safety>=3.0.0
+bandit>=1.7.5
+
+# ==========================================
+# PRE-COMMIT HOOKS
+# ==========================================
+
+pre-commit>=3.5.0

@@ -1,0 +1,119 @@
+# OSS Batch Processor Requirements
+# Python 3.8+ required
+
+# ==========================================
+# CORE DEPENDENCIES (Required for both versions)
+# ==========================================
+
+# HTTP requests to Ollama API
+requests>=2.31.0
+
+# YAML configuration file parsing
+PyYAML>=6.0.1
+
+# ==========================================
+# GUI VERSION DEPENDENCIES (oss-GUI.py)
+# ==========================================
+
+# Flask web framework for GUI
+Flask>=3.0.0
+
+# CORS support for Flask (cross-origin requests)
+Flask-Cors>=4.0.0
+
+# ==========================================
+# OPTIONAL ENHANCEMENTS (Recommended)
+# ==========================================
+
+# Environment variable management (.env files for API keys)
+python-dotenv>=1.0.0
+
+# Colored logging output for better readability
+colorlog>=6.8.0
+
+# ==========================================
+# CLI VERSION ENHANCEMENTS (oss-CLI.py)
+# ==========================================
+
+# Task scheduling (run at specific times)
+schedule>=1.2.0
+
+# Watch folders for new task files
+watchdog>=3.0.0
+
+# ==========================================
+# WEB SEARCH PLUGINS (Optional)
+# ==========================================
+
+# Choose one based on your search provider:
+# For Serper API (uncomment if using)
+# google-search-results>=2.4.2
+
+# For Tavily API (uncomment if using)
+# tavily-python>=0.3.0
+
+# ==========================================
+# DEVELOPMENT DEPENDENCIES (Optional)
+# ==========================================
+
+# Code formatting
+# black>=23.0.0
+
+# Type checking
+# mypy>=1.0.0
+
+# Testing
+# pytest>=7.4.0
+# pytest-cov>=4.1.0
+
+# ==========================================
+# ADVANCED FEATURES (Optional)
+# ==========================================
+
+# Async support for parallel processing
+# aiohttp>=3.9.0
+# asyncio-throttle>=0.1.1
+
+# Advanced database ORM (if extending beyond SQLite)
+# sqlalchemy>=2.0.0
+# alembic>=1.12.0
+
+# Email notifications
+# sendgrid>=6.11.0
+# OR
+# yagmail>=0.15.0
+
+# Rich terminal output for CLI
+# rich>=13.7.0
+
+# Progress bars for long operations
+# tqdm>=4.66.0
+
+# ==========================================
+# SYSTEM MONITORING (Optional)
+# ==========================================
+
+# System resource monitoring
+# psutil>=5.9.0
+
+# Process management
+# supervisor>=4.2.5
+
+# ==========================================
+# NOTES
+# ==========================================
+# 
+# Minimal install (both versions):
+#   pip install requests pyyaml flask flask-cors
+#
+# Recommended install:
+#   pip install -r requirements.txt
+#
+# Full install with all optional features:
+#   Uncomment the optional dependencies you need
+#
+# For development:
+#   pip install -r requirements.txt
+#   pip install black mypy pytest pytest-cov
+#
+# ==========================================

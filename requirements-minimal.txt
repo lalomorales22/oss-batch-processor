@@ -1,0 +1,7 @@
+# Minimal requirements for OSS Batch Processor
+# This includes only the absolutely necessary packages
+
+requests>=2.31.0
+PyYAML>=6.0.1
+Flask>=3.0.0
+Flask-Cors>=4.0.0
