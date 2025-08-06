@@ -16,11 +16,19 @@
 
 ## 🚀 Quick Start
 
-### 1. Install (30 seconds)
+### 1. Install (< 1 minute)
 ```bash
 # Clone repo
 git clone https://github.com/lalomorales22/oss-batch-processor
 cd oss-batch-processor
+
+# Install uv if you don't have it (fast Python package manager)
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Create virtual environment with uv
+uv venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+# Alternative: python -m venv venv && source venv/bin/activate
 
 # Run interactive installer
 python install.py
@@ -138,6 +146,10 @@ python install.py
 
 ### Manual
 ```bash
+# Create virtual environment first
+uv venv  # Or: python -m venv venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+
 # Minimal
 pip install requests PyYAML Flask Flask-Cors
 
@@ -236,6 +248,8 @@ Pull requests welcome! See [CONTRIBUTING.md](CONTRIBUTING.md)
 
 ```bash
 # Setup development environment
+uv venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 pip install -r requirements-dev.txt
 make test
 make lint
