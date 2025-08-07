@@ -421,6 +421,7 @@ HTML_TEMPLATE = '''
             grid-template-columns: 1fr 1fr auto;
             gap: 0.5rem;
             align-items: center;
+            margin-bottom: 0.5rem;
         }
         
         .icon-button {
@@ -619,7 +620,7 @@ HTML_TEMPLATE = '''
                 </div>
                 
                 <div class="button-group">
-                    <button class="button button-primary" onclick="startProcessing()">
+                    <button id="process-btn" class="button button-primary" onclick="startProcessing()">
                         Start Processing
                         <span id="processing-loader" class="loader" style="display: none;"></span>
                     </button>
@@ -772,20 +773,29 @@ HTML_TEMPLATE = '''
         }
         
         async function startProcessing() {
+            const processBtn = document.getElementById('process-btn');
             document.getElementById('processing-loader').style.display = 'inline-block';
+            processBtn.disabled = true;
+            
             try {
                 const response = await fetch('/api/start_processing', {method: 'POST'});
                 if (response.ok) {
                     showToast('Processing started');
                     processingInterval = setInterval(updateStatus, 2000);
+                    processBtn.textContent = 'Processing...';
+                    processBtn.classList.add('processing');
                 }
             } catch (error) {
                 showToast('Error starting processing', 'error');
+                document.getElementById('processing-loader').style.display = 'none';
+                processBtn.disabled = false;
             }
         }
         
         async function stopProcessing() {
+            const processBtn = document.getElementById('process-btn');
             document.getElementById('processing-loader').style.display = 'none';
+            
             try {
                 const response = await fetch('/api/stop_processing', {method: 'POST'});
                 if (response.ok) {
@@ -794,6 +804,9 @@ HTML_TEMPLATE = '''
                         clearInterval(processingInterval);
                         processingInterval = null;
                     }
+                    processBtn.textContent = 'Start Processing';
+                    processBtn.classList.remove('processing');
+                    processBtn.disabled = false;
                 }
             } catch (error) {
                 showToast('Error stopping processing', 'error');
@@ -839,14 +852,25 @@ HTML_TEMPLATE = '''
                     
                     // Update button state based on actual processing status
                     const processBtn = document.getElementById('process-btn');
+                    const processLoader = document.getElementById('processing-loader');
                     const isProcessing = stats.processing === true;
                     
                     if (isProcessing) {
-                        processBtn.textContent = 'Stop Processing';
+                        processBtn.textContent = 'Processing...';
                         processBtn.classList.add('processing');
+                        processBtn.disabled = true;
+                        processLoader.style.display = 'inline-block';
                     } else {
                         processBtn.textContent = 'Start Processing';
                         processBtn.classList.remove('processing');
+                        processBtn.disabled = false;
+                        processLoader.style.display = 'none';
+                        
+                        // Clear processing interval when processing stops
+                        if (processingInterval) {
+                            clearInterval(processingInterval);
+                            processingInterval = null;
+                        }
                     }
                 }
             } catch (error) {
@@ -854,18 +878,6 @@ HTML_TEMPLATE = '''
             }
         }
         
-        async function loadTasks() {
-            try {
-                const response = await fetch('/api/tasks');
-                if (response.ok) {
-                    const data = await response.json();
-                    const tasks = data.tasks || data; // Handle both formats
-                    renderTasks(tasks);
-                }
-            } catch (error) {
-                console.error('Error loading tasks:', error);
-            }
-        }
         
         function renderTasks(tasks) {
             const container = document.getElementById('task-list');
@@ -887,9 +899,15 @@ HTML_TEMPLATE = '''
                                 ${task.processing_time ? `<span class="badge badge-default">${task.processing_time.toFixed(1)}s</span>` : ''}
                             </div>
                         </div>
-                        ${task.status === 'completed' ? 
-                            `<button class="button button-ghost" onclick="viewResults('${task.id}')">View</button>` : 
-                            ''}
+                        <div class="task-actions" style="display: flex; gap: 0.5rem;">
+                            ${task.status === 'completed' ? 
+                                `<button class="button button-ghost" onclick="viewResults('${task.id}')">View</button>` : 
+                                ''}
+                            ${task.status === 'pending' ? 
+                                `<button class="button button-ghost" onclick="editTask('${task.id}')">Edit</button>` : 
+                                ''}
+                            <button class="button button-ghost" onclick="deleteTask('${task.id}')" style="color: #ef4444;">Delete</button>
+                        </div>
                     </div>
                 `).join('') + '</div>';
         }
@@ -1120,6 +1138,151 @@ HTML_TEMPLATE = '''
             }
         }
         
+        // Delete a task
+        async function deleteTask(taskId) {
+            if (!confirm('Are you sure you want to delete this task?')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/delete_task/${taskId}`, {method: 'DELETE'});
+                if (response.ok) {
+                    showToast('Task deleted successfully');
+                    updateStatus();
+                    loadTasks();
+                } else {
+                    const error = await response.json();
+                    showToast(error.error || 'Failed to delete task', 'error');
+                }
+            } catch (error) {
+                showToast('Error deleting task', 'error');
+            }
+        }
+        
+        // Edit a task
+        async function editTask(taskId) {
+            const task = allTasks ? allTasks.find(t => t.id === taskId) : null;
+            if (!task) {
+                showToast('Task not found', 'error');
+                return;
+            }
+            
+            if (task.status !== 'pending') {
+                showToast('Can only edit pending tasks', 'error');
+                return;
+            }
+            
+            // Create a modal for editing
+            const modal = document.getElementById('task-modal');
+            const modalTitle = document.getElementById('modal-title');
+            const modalBody = document.getElementById('modal-body');
+            
+            modalTitle.textContent = `Edit Task ${task.id}`;
+            
+            modalBody.innerHTML = `
+                <div class="form-group">
+                    <label for="edit-content">Task Content:</label>
+                    <textarea id="edit-content" style="width: 100%; min-height: 100px;">${task.content}</textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label>Metadata (Optional):</label>
+                    <div id="edit-metadata-container"></div>
+                    <button type="button" class="button button-secondary" onclick="addEditMetadataRow()">+ Add Metadata</button>
+                </div>
+                
+                <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+                    <button class="button button-primary" onclick="saveTaskEdit('${task.id}')">Save Changes</button>
+                    <button class="button button-secondary" onclick="closeModal()">Cancel</button>
+                </div>
+            `;
+            
+            // Populate existing metadata
+            const metadataContainer = document.getElementById('edit-metadata-container');
+            if (task.metadata && Object.keys(task.metadata).length > 0) {
+                Object.entries(task.metadata).forEach(([key, value]) => {
+                    const row = document.createElement('div');
+                    row.className = 'metadata-row';
+                    row.innerHTML = `
+                        <input type="text" placeholder="Key" class="meta-key" value="${key}">
+                        <input type="text" placeholder="Value" class="meta-value" value="${value}">
+                        <button type="button" class="button button-ghost icon-button" onclick="removeMetadataRow(this)">×</button>
+                    `;
+                    metadataContainer.appendChild(row);
+                });
+            } else {
+                addEditMetadataRow();
+            }
+            
+            modal.classList.add('active');
+        }
+        
+        function addEditMetadataRow() {
+            const container = document.getElementById('edit-metadata-container');
+            const row = document.createElement('div');
+            row.className = 'metadata-row';
+            row.innerHTML = `
+                <input type="text" placeholder="Key" class="meta-key">
+                <input type="text" placeholder="Value" class="meta-value">
+                <button type="button" class="button button-ghost icon-button" onclick="removeMetadataRow(this)">×</button>
+            `;
+            container.appendChild(row);
+        }
+        
+        async function saveTaskEdit(taskId) {
+            const content = document.getElementById('edit-content').value.trim();
+            if (!content) {
+                showToast('Task content cannot be empty', 'error');
+                return;
+            }
+            
+            const metadata = {};
+            document.querySelectorAll('#edit-metadata-container .metadata-row').forEach(row => {
+                const key = row.querySelector('.meta-key').value.trim();
+                const value = row.querySelector('.meta-value').value.trim();
+                if (key && value) {
+                    metadata[key] = value;
+                }
+            });
+            
+            try {
+                const response = await fetch(`/api/update_task/${taskId}`, {
+                    method: 'PUT',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({content, metadata})
+                });
+                
+                if (response.ok) {
+                    showToast('Task updated successfully');
+                    closeModal();
+                    updateStatus();
+                    loadTasks();
+                } else {
+                    const error = await response.json();
+                    showToast(error.error || 'Failed to update task', 'error');
+                }
+            } catch (error) {
+                showToast('Error updating task', 'error');
+            }
+        }
+        
+        // Store tasks globally for edit/delete operations  
+        let allTasks = [];
+        
+        // Update loadTasks to store tasks globally
+        async function loadTasks() {
+            try {
+                const response = await fetch('/api/tasks');
+                if (response.ok) {
+                    const data = await response.json();
+                    allTasks = data.tasks || data; // Store globally and handle both formats
+                    renderTasks(allTasks);
+                }
+            } catch (error) {
+                console.error('Error loading tasks:', error);
+            }
+        }
+
         // View individual task results
         async function viewTaskResults(taskId) {
             try {
@@ -1392,6 +1555,29 @@ class TaskProcessor:
                 task.retry_count = 0
                 task.error = None
         self.save_queue()
+    
+    def delete_task(self, task_id: str) -> bool:
+        """Delete a task from the queue"""
+        initial_len = len(self.queue)
+        self.queue = [t for t in self.queue if t.id != task_id]
+        if len(self.queue) < initial_len:
+            self.save_queue()
+            return True
+        return False
+    
+    def update_task(self, task_id: str, content: str = None, metadata: dict = None) -> bool:
+        """Update a task's content and/or metadata (only if pending)"""
+        task = next((t for t in self.queue if t.id == task_id), None)
+        if task and task.status == TaskStatus.PENDING:
+            if content is not None:
+                task.content = content
+            if metadata is not None:
+                task.metadata = metadata
+            task.updated_at = datetime.now().isoformat()
+            self.save_queue()
+            self.save_to_db(task)
+            return True
+        return False
 
 # Flask application
 app = Flask(__name__)
@@ -1409,6 +1595,74 @@ def get_local_ip():
         return ip
     except:
         return "localhost"
+
+def get_all_network_interfaces():
+    """Get all available network interfaces and their IPs"""
+    interfaces = []
+    try:
+        import subprocess
+        result = subprocess.run(['ifconfig'], capture_output=True, text=True)
+        lines = result.stdout.split('\n')
+        current_interface = None
+        for line in lines:
+            if line and not line.startswith('\t') and not line.startswith(' '):
+                current_interface = line.split(':')[0]
+            elif 'inet ' in line and '127.0.0.1' not in line and 'inet 169.254' not in line:
+                ip = line.split('inet ')[1].split(' ')[0]
+                if current_interface:
+                    interfaces.append((current_interface, ip))
+    except:
+        pass
+    return interfaces
+
+def test_network_connectivity():
+    """Test if the server is accessible from different interfaces"""
+    print("🔍 NETWORK DIAGNOSTICS:")
+    local_ip = get_local_ip()
+    interfaces = get_all_network_interfaces()
+    
+    print(f"Primary IP detected: {local_ip}")
+    if interfaces:
+        print("Available network interfaces:")
+        for interface, ip in interfaces:
+            print(f"  {interface}: {ip}")
+    
+    # Test if we can bind to the port
+    try:
+        test_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        test_socket.bind(('0.0.0.0', 5001))
+        test_socket.close()
+        print("✅ Port 5001 is available")
+    except OSError:
+        print("❌ Port 5001 is already in use")
+    
+    return local_ip, interfaces
+
+def generate_qr_code_ascii(url):
+    """Generate a simple ASCII QR-like code for the URL"""
+    try:
+        # Try to use qrcode library if available
+        import qrcode
+        qr = qrcode.QRCode(version=1, box_size=1, border=1)
+        qr.add_data(url)
+        qr.make(fit=True)
+        
+        # Generate ASCII art
+        matrix = qr.modules
+        if matrix:
+            print(f"\n📱 SCAN QR CODE WITH PHONE:")
+            print("█" * (len(matrix[0]) + 2))
+            for row in matrix:
+                line = "█"
+                for cell in row:
+                    line += "██" if cell else "  "
+                line += "█"
+                print(line)
+            print("█" * (len(matrix[0]) + 2))
+            return True
+    except ImportError:
+        pass
+    return False
 
 @app.route('/')
 def index():
@@ -1472,6 +1726,28 @@ def clear_completed():
 def reset_failed():
     processor.reset_failed()
     return jsonify({'status': 'reset'})
+
+@app.route('/api/delete_task/<task_id>', methods=['DELETE'])
+def delete_task(task_id):
+    """Delete a specific task"""
+    success = processor.delete_task(task_id)
+    if success:
+        return jsonify({'status': 'deleted', 'task_id': task_id})
+    else:
+        return jsonify({'error': 'Task not found'}), 404
+
+@app.route('/api/update_task/<task_id>', methods=['PUT'])
+def update_task(task_id):
+    """Update a task's content and metadata (only if pending)"""
+    data = request.json
+    content = data.get('content')
+    metadata = data.get('metadata')
+    
+    success = processor.update_task(task_id, content, metadata)
+    if success:
+        return jsonify({'status': 'updated', 'task_id': task_id})
+    else:
+        return jsonify({'error': 'Task not found or not editable (must be pending)'}), 400
 
 @app.route('/gallery')
 def gallery():
@@ -1663,15 +1939,55 @@ def get_cli_task(task_id):
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
-    local_ip = get_local_ip()
-    print("\n" + "="*60)
-    print("TASK PROCESSOR GUI STARTED")
-    print("="*60)
-    print(f"Local Access:   http://localhost:5001")
-    print(f"Network Access: http://{local_ip}:5001")
-    print(f"Phone Access:   http://{local_ip}:5001")
-    print("="*60)
-    print("Make sure Ollama is running: ollama serve")
-    print("="*60 + "\n")
+    # Run network diagnostics first
+    local_ip, interfaces = test_network_connectivity()
     
-    app.run(host='0.0.0.0', port=5001, debug=False)
+    print("\n" + "="*70)
+    print("🚀 TASK PROCESSOR GUI STARTED")
+    print("="*70)
+    print(f"📱 Local Access:    http://localhost:5001")
+    print(f"🌐 Network Access:  http://{local_ip}:5001")
+    print(f"📲 Phone Access:    http://{local_ip}:5001")
+    print(f"🎨 Gallery View:    http://{local_ip}:5001/gallery")
+    print("="*70)
+    print("🤖 Make sure Ollama is running: ollama serve")
+    print("="*70)
+    
+    # Show alternative IPs if available
+    if interfaces and len(interfaces) > 1:
+        print("\n🔄 ALTERNATIVE NETWORK ADDRESSES:")
+        for interface, ip in interfaces:
+            if ip != local_ip:
+                print(f"   {interface}: http://{ip}:5001")
+        print("="*70)
+    
+    print("\n📱 PHONE/TABLET ACCESS TROUBLESHOOTING:")
+    print(f"1. Ensure your device is on the same WiFi network")
+    print(f"2. Try: http://{local_ip}:5001")
+    print(f"3. If blocked, check macOS Firewall:")
+    print(f"   System Preferences → Security & Privacy → Firewall")
+    print(f"   Allow 'Python' or add port 5001")
+    print(f"4. Test connectivity from phone: ping {local_ip}")
+    print(f"5. Try alternative addresses listed above")
+    print("="*70)
+    
+    # Try to generate QR code for easy mobile access
+    main_url = f"http://{local_ip}:5001"
+    if not generate_qr_code_ascii(main_url):
+        print(f"\n📱 QUICK PHONE ACCESS:")
+        print(f"   Bookmark this: {main_url}")
+        print(f"   Or install 'qrcode' for QR codes: pip install qrcode[pil]")
+    
+    print("="*70 + "\n")
+    
+    try:
+        app.run(host='0.0.0.0', port=5001, debug=False)
+    except OSError as e:
+        if "Address already in use" in str(e):
+            print("❌ ERROR: Port 5001 is already in use!")
+            print("💡 SOLUTION: Run this command to free the port:")
+            print("   lsof -ti:5001 | xargs kill -9")
+            print("   Then restart the server.")
+        else:
+            print(f"❌ ERROR: {e}")
+        exit(1)

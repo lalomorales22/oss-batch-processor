@@ -10,16 +10,15 @@
 
 <img width="626" height="866" alt="Screenshot 2025-08-06 at 2 22 36 PM" src="https://github.com/user-attachments/assets/062eeeea-a9b2-44be-8d1b-90943256a85d" />
 
-## 🎉 Latest Updates (v2.2)
+## 🎉 Latest Updates (v2.3)
 
-- **🎨 Unified Gallery View** - Browse both GUI and CLI databases in one interface
-- **📊 CLI Database Integration** - Gallery now displays tasks from `universal_processor.db`
-- **🔍 Enhanced Task Details** - View CLI processing steps and configurations
-- **🔄 Database Switching** - Toggle between GUI and CLI task databases seamlessly
-- **🔍 Web Search Integration** - Serper/Tavily API support for all task types
-- **📁 Full CRUD Operations** - 15+ file operations with download/upload support
-- **🐳 Docker Fixes** - Resolved database permissions and Ollama connection issues
-- **⚡ Better Processing** - Real-time progress tracking and error handling
+- **📱 Enhanced Mobile Access** - Improved network diagnostics and QR codes for phone access
+- **✏️ Task Management** - Edit/delete tasks with confirmation dialogs
+- **🔧 Processing Fixes** - Auto-stop when complete, proper button states
+- **🌐 Network Diagnostics** - Built-in connectivity testing and troubleshooting
+- **🎨 Unified Gallery** - Browse both GUI and CLI databases in one interface
+- **📊 Database Switching** - Toggle between task databases seamlessly
+- **🔍 Web Search Integration** - Serper/Tavily API support for research tasks
 
 ## ✨ Features
 
@@ -65,10 +64,12 @@ ollama pull gpt-oss:20b
 ```bash
 python obp-GUI.py
 # Access at http://localhost:5001
-# Phone access at http://[your-ip]:5001
+# Phone: Use the IP address shown in startup (e.g., http://192.168.0.64:5001)
 ```
 
-That's it! Start adding tasks from your phone or computer.
+**📱 Phone Access Issues?** Run `python network_test.py` for diagnostics!
+
+> **📱 Your Phone URL:** When you start the GUI, look for "Network Access" in the output (e.g., `http://192.168.0.64:5001`). Use that exact address on your phone's browser.
 
 ## 📱 GUI Version (`obp-GUI.py`)
 
@@ -85,12 +86,12 @@ Clean web interface accessible from any device:
 ![GUI Features](https://img.shields.io/badge/Design-Minimal%20Black%20%26%20White-000000)
 
 ### Enhanced GUI Features
-- **File Browser**: Browse, download, and manage workspace files
-- **Progress Tracking**: See which steps are running in real-time  
-- **Metadata Builder**: Visual form builder for task configuration
-- **Web Search Indicators**: Know when tasks are researching
-- **Gallery View**: Card-based task display with filtering and database switching (GUI/CLI)
-- **Statistics Dashboard**: Track completion rates and processing time
+- **Task Management**: Edit/delete tasks with confirmation dialogs
+- **Mobile Optimized**: Network diagnostics and QR codes for easy phone access
+- **Processing Control**: Auto-stop when complete, real-time status updates
+- **Gallery View**: Visual task browser with CLI/GUI database switching
+- **File Browser**: Download/upload files with workspace management
+- **Progress Tracking**: Real-time step monitoring and metadata building
 
 ## 💻 CLI Version (`obp-CLI.py`)
 
@@ -177,6 +178,25 @@ steps:
     prompt: "Summarize: {web_search_result}"
   - name: save
     plugin: file_operations
+```
+
+## 📱 Mobile/Network Access
+
+### Phone & Tablet Setup
+1. **Start the GUI**: `python obp-GUI.py`
+2. **Note the IP**: Look for "Network Access" in startup (e.g., `192.168.0.64:5001`)
+3. **Open on Phone**: Navigate to that address in your mobile browser
+4. **Bookmark It**: Save for easy access
+
+### Troubleshooting Network Issues
+```bash
+# Diagnose connectivity problems
+python network_test.py
+
+# Common solutions:
+# 1. Check WiFi - same network for both devices
+# 2. macOS Firewall - System Preferences → Security → Firewall → Allow Python
+# 3. Test basic connectivity: ping [ip-address] from phone
 ```
 
 ## 📦 Installation Options
@@ -278,14 +298,11 @@ Find all TODOs in Python files
 ```
 
 ### Gallery View
-Access at `http://localhost:5001/gallery` for:
-- **Unified View**: Switch between GUI (`task_processor.db`) and CLI (`universal_processor.db`) databases
-- **Visual Cards**: Card-based task display with type indicators and status badges
-- **Advanced Filtering**: Filter by database, task type, status, or search content
-- **Detailed Views**: Click any task to see full results, processing steps, and configuration
-- **Statistics Dashboard**: Track completion rates and processing time across both databases
-- **Export Functionality**: Export completed tasks as JSON
-- **Auto-refresh**: Updates every 5 seconds for real-time monitoring
+Access visual task management at `/gallery`:
+- **Database Switching**: Toggle between GUI and CLI task databases
+- **Visual Cards**: Task display with filtering, search, and statistics
+- **Task Details**: Click any task for full results and processing steps
+- **Export/Download**: JSON export and file management
 
 ### Web Search Integration
 All task types now support web search:
@@ -327,29 +344,20 @@ oss-batch-processor/
 
 ## 🐛 Troubleshooting
 
-**Quick Diagnosis:**
+**Quick Fixes:**
 ```bash
-python test_connection.py  # Check everything at once
+python test_connection.py    # Test Ollama connection
+python network_test.py       # Test mobile access
+./docker-setup.sh           # Fix Docker permissions
 ```
 
-**Docker Issues:**
-```bash
-./docker-setup.sh          # Fix permissions
-docker-compose down         # Reset container
-docker-compose up --build -d
-```
+**Common Issues:**
+- **Mobile Access**: Use IP from startup message, check firewall settings
+- **Ollama**: Ensure `ollama serve` is running on port 11434
+- **Processing Stuck**: Button auto-resets when queue is empty
+- **API Keys**: Verify `.env` has real keys (not placeholders)
 
-**Common Problems:**
-- **Ollama connection**: Make sure `ollama serve` is running
-- **API keys**: Check `.env` file has real keys (not placeholder text)
-- **Database errors**: Run `./docker-setup.sh` to fix permissions
-- **Phone access**: Check firewall: `sudo ufw allow 5001`
-
-**Performance:**
-- This is designed for overnight processing with the gpt-oss:20b model from ollama
-- See [REQUIREMENTS_GUIDE.md](REQUIREMENTS_GUIDE.md) for detailed dependency information
-
-For comprehensive troubleshooting, see [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
+For detailed help: [TROUBLESHOOTING.md](TROUBLESHOOTING.md) | [REQUIREMENTS_GUIDE.md](REQUIREMENTS_GUIDE.md)
 
 ## 💡 Use Cases
 
@@ -394,12 +402,13 @@ MIT - See [LICENSE](LICENSE)
 
 ## 📝 Changelog
 
-### v2.2.0 - Unified Gallery View (Current)
+### v2.3.0 - Enhanced Mobile & Task Management (Current)
+- ✅ Mobile access improvements with network diagnostics
+- ✅ Task editing and deletion with confirmation dialogs
+- ✅ Auto-stop processing when queue complete
+- ✅ QR code generation for easy phone access (with qrcode library)
 - ✅ Unified Gallery with CLI/GUI database switching
-- ✅ Enhanced task details with processing steps for CLI tasks  
-- ✅ Database selector dropdown in gallery interface
-- ✅ API endpoints for CLI database access
-- ✅ Improved task filtering and search capabilities
+- ✅ Enhanced network troubleshooting tools
 
 ### v2.1.0 - Enhanced GUI & Docker Fixes
 - ✅ Enhanced GUI with file browser and progress tracking
