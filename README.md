@@ -338,8 +338,7 @@ docker-compose up --build -d
 - **Phone access**: Check firewall: `sudo ufw allow 5001`
 
 **Performance:**
-- This is designed for overnight processing with large models
-- Use smaller model for testing: `ollama pull llama2`
+- This is designed for overnight processing with the gpt-oss:20b model from ollama
 
 For detailed troubleshooting, see [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
 
