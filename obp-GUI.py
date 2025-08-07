@@ -1568,6 +1568,9 @@ class TaskProcessor:
                     prompt = f"{step.capitalize()} this: {task.content}"
                     task.results[step] = self.process_with_ollama(prompt)
             
+            # Save content to file if filename is specified in metadata
+            self._save_results_to_file(task)
+            
             task.status = TaskStatus.COMPLETED
             task.processing_time = time.time() - start_time
             
@@ -1646,6 +1649,59 @@ class TaskProcessor:
             self.save_to_db(task)
             return True
         return False
+    
+    def _save_results_to_file(self, task: Task):
+        """Save task results to a file in the workspace directory"""
+        try:
+            # Create workspace directory if it doesn't exist
+            workspace_dir = Path("workspace")
+            workspace_dir.mkdir(exist_ok=True)
+            
+            # Determine filename from metadata or use default
+            filename = task.metadata.get('filename', f"{task.id}.txt")
+            
+            # If no extension, add .txt
+            if '.' not in filename:
+                filename += '.txt'
+            
+            # Combine all results into one content string
+            content_parts = []
+            
+            # Add task description
+            content_parts.append(f"Task: {task.content}\n")
+            content_parts.append(f"Type: {task.type.value}\n")
+            content_parts.append(f"Generated: {task.updated_at}\n")
+            content_parts.append("=" * 50 + "\n")
+            
+            # Add all result sections
+            for key, value in task.results.items():
+                if isinstance(value, str) and value.strip():
+                    content_parts.append(f"\n## {key.upper().replace('_', ' ')}\n")
+                    content_parts.append(f"{value}\n")
+                elif isinstance(value, dict):
+                    # For nested dict results (like web search), extract meaningful content
+                    if key == 'research' and 'organic' in value:
+                        content_parts.append(f"\n## WEB SEARCH RESULTS\n")
+                        for result in value['organic'][:3]:  # Top 3 results
+                            content_parts.append(f"- {result.get('title', 'No title')}\n")
+                            content_parts.append(f"  {result.get('snippet', 'No description')}\n")
+                            content_parts.append(f"  Link: {result.get('link', 'No link')}\n\n")
+                    else:
+                        content_parts.append(f"\n## {key.upper().replace('_', ' ')}\n")
+                        content_parts.append(f"{json.dumps(value, indent=2)}\n")
+            
+            # Write to file
+            file_path = workspace_dir / filename
+            with open(file_path, 'w', encoding='utf-8') as f:
+                f.writelines(content_parts)
+            
+            # Update results with file save confirmation
+            task.results['save_document'] = f"Content saved to: {filename}"
+            logger.info(f"Saved task results to: {file_path}")
+            
+        except Exception as e:
+            logger.error(f"Failed to save results to file: {e}")
+            task.results['save_document'] = f"Error saving file: {str(e)}"
 
 # Flask application
 app = Flask(__name__)
