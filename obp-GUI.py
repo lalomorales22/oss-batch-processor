@@ -1547,6 +1547,121 @@ def upload_file():
     
     return jsonify({'message': 'File uploaded successfully', 'filename': file.filename})
 
+@app.route('/api/cli_tasks')
+def get_cli_tasks():
+    """Get tasks from CLI database (universal_processor.db)"""
+    try:
+        # Use data directory for database in Docker, current dir otherwise
+        data_dir = Path("data")
+        if data_dir.exists():
+            cli_db_path = data_dir / "universal_processor.db"
+        else:
+            cli_db_path = Path("universal_processor.db")
+        
+        if not cli_db_path.exists():
+            return jsonify({'tasks': []})
+        
+        conn = sqlite3.connect(cli_db_path)
+        cursor = conn.cursor()
+        cursor.execute('''
+            SELECT id, type, content, config_name, status, results, metadata, error, 
+                   retry_count, created_at, updated_at, processing_time
+            FROM tasks
+            ORDER BY created_at DESC
+        ''')
+        
+        tasks_data = []
+        for row in cursor.fetchall():
+            task = {
+                'id': row[0],
+                'type': row[1],
+                'content': row[2],
+                'config_name': row[3],
+                'status': row[4],
+                'results': json.loads(row[5]) if row[5] else {},
+                'metadata': json.loads(row[6]) if row[6] else {},
+                'error': row[7],
+                'retry_count': row[8],
+                'created_at': row[9],
+                'updated_at': row[10],
+                'processing_time': row[11]
+            }
+            tasks_data.append(task)
+        
+        conn.close()
+        return jsonify({'tasks': tasks_data})
+        
+    except Exception as e:
+        logger.error(f"Error loading CLI tasks: {e}")
+        return jsonify({'tasks': [], 'error': str(e)})
+
+@app.route('/api/cli_task/<task_id>')
+def get_cli_task(task_id):
+    """Get single CLI task with steps"""
+    try:
+        # Use data directory for database in Docker, current dir otherwise
+        data_dir = Path("data")
+        if data_dir.exists():
+            cli_db_path = data_dir / "universal_processor.db"
+        else:
+            cli_db_path = Path("universal_processor.db")
+        
+        if not cli_db_path.exists():
+            return jsonify({'error': 'CLI database not found'}), 404
+        
+        conn = sqlite3.connect(cli_db_path)
+        cursor = conn.cursor()
+        
+        # Get task details
+        cursor.execute('''
+            SELECT id, type, content, config_name, status, results, metadata, error, 
+                   retry_count, created_at, updated_at, processing_time
+            FROM tasks WHERE id = ?
+        ''', (task_id,))
+        
+        row = cursor.fetchone()
+        if not row:
+            conn.close()
+            return jsonify({'error': 'Task not found'}), 404
+        
+        task = {
+            'id': row[0],
+            'type': row[1],
+            'content': row[2],
+            'config_name': row[3],
+            'status': row[4],
+            'results': json.loads(row[5]) if row[5] else {},
+            'metadata': json.loads(row[6]) if row[6] else {},
+            'error': row[7],
+            'retry_count': row[8],
+            'created_at': row[9],
+            'updated_at': row[10],
+            'processing_time': row[11]
+        }
+        
+        # Get task steps
+        cursor.execute('''
+            SELECT step_name, result, created_at
+            FROM task_steps WHERE task_id = ?
+            ORDER BY created_at
+        ''', (task_id,))
+        
+        task['steps'] = []
+        for step_row in cursor.fetchall():
+            step = {
+                'step_name': step_row[0],
+                'result': step_row[1],
+                'created_at': step_row[2]
+            }
+            task['steps'].append(step)
+        
+        conn.close()
+        return jsonify(task)
+        
+    except Exception as e:
+        logger.error(f"Error loading CLI task {task_id}: {e}")
+        return jsonify({'error': str(e)}), 500
+
 if __name__ == '__main__':
     local_ip = get_local_ip()
     print("\n" + "="*60)

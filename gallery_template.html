@@ -271,6 +271,7 @@
 <body>
     <div class="header">
         <h1>Task Gallery</h1>
+        <p style="margin-top: 0.5rem; opacity: 0.8;">View completed tasks from GUI and CLI databases</p>
     </div>
     
     <div class="stats" id="stats">
@@ -293,6 +294,14 @@
     </div>
     
     <div class="controls">
+        <div class="filter-group">
+            <label>Database:</label>
+            <select id="database-filter">
+                <option value="gui">GUI Tasks (task_processor.db)</option>
+                <option value="cli">CLI Tasks (universal_processor.db)</option>
+            </select>
+        </div>
+        
         <div class="filter-group">
             <label>Type:</label>
             <select id="type-filter">
@@ -342,12 +351,16 @@
     
     <script>
         let allTasks = [];
+        let currentDatabase = 'gui';
         
         async function loadTasks() {
             try {
-                const response = await fetch('/api/tasks');
+                const databaseFilter = document.getElementById('database-filter').value;
+                const endpoint = databaseFilter === 'cli' ? '/api/cli_tasks' : '/api/tasks';
+                const response = await fetch(endpoint);
                 const data = await response.json();
                 allTasks = data.tasks || [];
+                currentDatabase = databaseFilter;
                 updateStats();
                 renderGallery();
             } catch (error) {
@@ -422,14 +435,15 @@
         
         async function showTaskDetails(taskId) {
             try {
-                const response = await fetch(`/api/task/${taskId}`);
+                const endpoint = currentDatabase === 'cli' ? `/api/cli_task/${taskId}` : `/api/task/${taskId}`;
+                const response = await fetch(endpoint);
                 const task = await response.json();
                 
                 const modal = document.getElementById('task-modal');
                 const modalTitle = document.getElementById('modal-title');
                 const modalBody = document.getElementById('modal-body');
                 
-                modalTitle.textContent = `Task ${task.id}`;
+                modalTitle.textContent = `${currentDatabase.toUpperCase()} Task ${task.id}`;
                 
                 let resultsHtml = '';
                 if (task.results && Object.keys(task.results).length > 0) {
@@ -445,12 +459,27 @@
                     resultsHtml = '<p>No results available yet.</p>';
                 }
                 
+                // Add steps section for CLI tasks
+                let stepsHtml = '';
+                if (currentDatabase === 'cli' && task.steps && task.steps.length > 0) {
+                    stepsHtml = `
+                        <div class="result-section">
+                            <h3>Processing Steps</h3>
+                            <div class="result-content">
+${task.steps.map(step => `Step: ${step.step_name}\nCreated: ${new Date(step.created_at).toLocaleString()}\nResult: ${step.result}\n\n`).join('')}
+                            </div>
+                        </div>
+                    `;
+                }
+                
                 modalBody.innerHTML = `
                     <div class="result-section">
                         <h3>Task Information</h3>
                         <div class="result-content">
 Type: ${task.type}
 Status: ${task.status}
+Database: ${currentDatabase.toUpperCase()}
+${task.config_name ? 'Config: ' + task.config_name : ''}
 Created: ${new Date(task.created_at).toLocaleString()}
 Processing Time: ${task.processing_time ? task.processing_time.toFixed(2) + 's' : 'N/A'}
 ${task.error ? 'Error: ' + task.error : ''}
@@ -462,6 +491,7 @@ ${task.error ? 'Error: ' + task.error : ''}
                         <div class="result-content">${escapeHtml(task.content)}</div>
                     </div>
                     
+                    ${stepsHtml}
                     ${resultsHtml}
                 `;
                 
@@ -515,6 +545,7 @@ ${task.error ? 'Error: ' + task.error : ''}
         }
         
         // Add event listeners
+        document.getElementById('database-filter').addEventListener('change', loadTasks);
         document.getElementById('type-filter').addEventListener('change', renderGallery);
         document.getElementById('status-filter').addEventListener('change', renderGallery);
         document.getElementById('search-filter').addEventListener('input', renderGallery);

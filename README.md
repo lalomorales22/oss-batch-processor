@@ -10,15 +10,16 @@
 
 <img width="626" height="866" alt="Screenshot 2025-08-06 at 2 22 36 PM" src="https://github.com/user-attachments/assets/062eeeea-a9b2-44be-8d1b-90943256a85d" />
 
-## 🎉 Latest Updates (v2.1)
+## 🎉 Latest Updates (v2.2)
 
+- **🎨 Unified Gallery View** - Browse both GUI and CLI databases in one interface
+- **📊 CLI Database Integration** - Gallery now displays tasks from `universal_processor.db`
+- **🔍 Enhanced Task Details** - View CLI processing steps and configurations
+- **🔄 Database Switching** - Toggle between GUI and CLI task databases seamlessly
 - **🔍 Web Search Integration** - Serper/Tavily API support for all task types
-- **🎨 Enhanced GUI** - File browser, progress indicators, metadata builder
 - **📁 Full CRUD Operations** - 15+ file operations with download/upload support
 - **🐳 Docker Fixes** - Resolved database permissions and Ollama connection issues
-- **🔧 Setup Scripts** - `docker-setup.sh` and `test_connection.py` for easy deployment
 - **⚡ Better Processing** - Real-time progress tracking and error handling
-- **📱 Mobile Responsive** - Works seamlessly on phones and tablets
 
 ## ✨ Features
 
@@ -77,7 +78,7 @@ Clean web interface accessible from any device:
 - **Monitor progress** with real-time step tracking
 - **View results** with formatted display
 - **Browse files** in integrated workspace browser
-- **Gallery view** at `/gallery` for visual task browsing
+- **Gallery view** at `/gallery` for visual task browsing with CLI/GUI database switching
 - **Download files** individually or as workspace zip
 - **Mobile responsive** for phones/tablets
 
@@ -88,7 +89,7 @@ Clean web interface accessible from any device:
 - **Progress Tracking**: See which steps are running in real-time  
 - **Metadata Builder**: Visual form builder for task configuration
 - **Web Search Indicators**: Know when tasks are researching
-- **Gallery View**: Card-based task display with filtering
+- **Gallery View**: Card-based task display with filtering and database switching (GUI/CLI)
 - **Statistics Dashboard**: Track completion rates and processing time
 
 ## 💻 CLI Version (`obp-CLI.py`)
@@ -278,11 +279,13 @@ Find all TODOs in Python files
 
 ### Gallery View
 Access at `http://localhost:5001/gallery` for:
-- Visual card-based task display
-- Advanced filtering and search
-- Statistics dashboard
-- Export functionality
-- Auto-refresh every 5 seconds
+- **Unified View**: Switch between GUI (`task_processor.db`) and CLI (`universal_processor.db`) databases
+- **Visual Cards**: Card-based task display with type indicators and status badges
+- **Advanced Filtering**: Filter by database, task type, status, or search content
+- **Detailed Views**: Click any task to see full results, processing steps, and configuration
+- **Statistics Dashboard**: Track completion rates and processing time across both databases
+- **Export Functionality**: Export completed tasks as JSON
+- **Auto-refresh**: Updates every 5 seconds for real-time monitoring
 
 ### Web Search Integration
 All task types now support web search:
@@ -316,7 +319,10 @@ oss-batch-processor/
 ├── IMPROVEMENTS.md       # Recent improvements
 ├── workspace/            # File operations directory
 ├── results/              # Task output files
-└── task_processor.db     # SQLite database
+├── data/                 # Database directory
+│   ├── task_processor.db    # GUI tasks database
+│   └── universal_processor.db # CLI tasks database  
+└── logs/                 # Application logs
 ```
 
 ## 🐛 Troubleshooting
@@ -341,8 +347,9 @@ docker-compose up --build -d
 
 **Performance:**
 - This is designed for overnight processing with the gpt-oss:20b model from ollama
+- See [REQUIREMENTS_GUIDE.md](REQUIREMENTS_GUIDE.md) for detailed dependency information
 
-For detailed troubleshooting, see [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
+For comprehensive troubleshooting, see [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
 
 ## 💡 Use Cases
 
@@ -387,7 +394,14 @@ MIT - See [LICENSE](LICENSE)
 
 ## 📝 Changelog
 
-### v2.1.0 - Enhanced GUI & Docker Fixes (Current)
+### v2.2.0 - Unified Gallery View (Current)
+- ✅ Unified Gallery with CLI/GUI database switching
+- ✅ Enhanced task details with processing steps for CLI tasks  
+- ✅ Database selector dropdown in gallery interface
+- ✅ API endpoints for CLI database access
+- ✅ Improved task filtering and search capabilities
+
+### v2.1.0 - Enhanced GUI & Docker Fixes
 - ✅ Enhanced GUI with file browser and progress tracking
 - ✅ Fixed Docker database permissions and Ollama connection
 - ✅ Added metadata builder interface in GUI
