@@ -1,5 +1,5 @@
 # OSS Batch Processor
-
+Queue tasks during the day, wake up to completed work. An overnight AI assistant that processes ANY task using your local LLM while you sleep.
 
 **Queue tasks during the day, wake up to completed work.** An overnight AI assistant that processes ANY task using your local LLM while you sleep.
 
@@ -10,444 +10,252 @@
 
 <img width="626" height="866" alt="Screenshot 2025-08-06 at 2 22 36 PM" src="https://github.com/user-attachments/assets/062eeeea-a9b2-44be-8d1b-90943256a85d" />
 
-## 🎉 Latest Updates (v2.3)
 
-- **📱 Enhanced Mobile Access** - Improved network diagnostics and QR codes for phone access
-- **✏️ Task Management** - Edit/delete tasks with confirmation dialogs
-- **🔧 Processing Fixes** - Auto-stop when complete, proper button states
-- **🌐 Network Diagnostics** - Built-in connectivity testing and troubleshooting
-- **🎨 Unified Gallery** - Browse both GUI and CLI databases in one interface
-- **📊 Database Switching** - Toggle between task databases seamlessly
-- **🔍 Web Search Integration** - Serper/Tavily API support for research tasks
 
-## ✨ Features
 
-- **Never times out** - Built for slow models that need hours
-- **Two interfaces** - GUI with gallery view, CLI for power users  
-- **Phone access** - Queue tasks from anywhere on your network
-- **Universal tasks** - Search, create, code, process, chain operations
-- **Web search** - Optional Serper/Tavily integration for research
-- **File CRUD** - Complete file management system
-- **100% local** - Your data never leaves your machine (except optional web search)
+The Core Concept
+The OSS Batch Processor solves a simple but frustrating problem: local AI models are powerful but slow. Instead of waiting for each task to complete, this app lets you queue up multiple tasks throughout your day and then process them all at once while you sleep.
 
-## 🚀 Quick Start
+Think of it like a print queue, but for AI tasks. It's designed to never time out, making it perfect for complex jobs that might take hours. You can add tasks from any device on your network—phone, tablet, or laptop—and wake up to the completed work.
 
-### 1. Install (< 1 minute)
-```bash
-# Clone repo
-git clone https://github.com/lalomorales22/oss-batch-processor
+Key Features
+Never Times Out: Built from the ground up for slow, local models that need hours to run.
+
+Dual Interfaces: A modern web GUI for easy access and a powerful CLI for automation and power users.
+
+Phone & Tablet Access: Queue tasks from anywhere on your network with a mobile-responsive interface.
+
+Universal Task Engine: Handles a wide variety of tasks:
+
+search: In-depth research and report generation.
+
+create: Generate new content like articles, documentation, or creative writing.
+
+process: Transform existing content—summarize, rephrase, or change its tone.
+
+code: Generate, debug, or document software code.
+
+chain: Execute multi-step workflows where the output of one step feeds into the next.
+
+Web Search Integration: Optionally uses Serper or Tavily APIs to incorporate real-time information into any task.
+
+Full File Management: A complete file CRUD (Create, Read, Update, Delete) plugin with over 15 operations for managing your workspace.
+
+Visual Gallery: A beautiful, filterable gallery view at /gallery to browse, inspect, and export completed tasks from both GUI and CLI databases.
+
+100% Local & Private: Your data never leaves your machine (unless you enable the optional web search).
+
+Quick Start Guide
+1. Installation
+
+# Clone the repository
+git clone [https://github.com/lalomorales22/oss-batch-processor](https://github.com/lalomorales22/oss-batch-processor)
 cd oss-batch-processor
 
-# Install uv if you don't have it (fast Python package manager)
-curl -LsSf https://astral.sh/uv/install.sh | sh
+# We recommend 'uv' for fast package management
+# Install uv if you don't have it:
+curl -LsSf [https://astral.sh/uv/install.sh](https://astral.sh/uv/install.sh) | sh
 
-# Create virtual environment with uv
+# Create a virtual environment and activate it
 uv venv
 source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-# Alternative: python -m venv venv && source venv/bin/activate
 
-# Run interactive installer
+# Run the interactive installer (Recommended)
 python install.py
-# Choose option 2 (Recommended)
-```
 
-### 2. Start Ollama
-```bash
-# Terminal 1
+The installer will check your dependencies, verify your Ollama connection, and help you get set up.
+
+2. Start Ollama
+
+Open a new terminal and ensure your Ollama instance is running.
+
+# Terminal 1: Start the Ollama server
 ollama serve
 
-# Terminal 2 (if you need a model)
+# Terminal 2: Pull the recommended model if you don't have it
 ollama pull gpt-oss:20b
-```
 
-### 3. Run the GUI
-```bash
+3. Run the GUI
+
+# Start the web application
 python obp-GUI.py
-# Access at http://localhost:5001
-# Phone: Use the IP address shown in startup (e.g., http://192.168.0.64:5001)
-```
 
-**📱 Phone Access Issues?** Run `python network_test.py` for diagnostics!
+Access the GUI on your computer at http://localhost:5001.
 
-> **📱 Your Phone URL:** When you start the GUI, look for "Network Access" in the output (e.g., `http://192.168.0.64:5001`). Use that exact address on your phone's browser.
+To access from your phone or another device, use the "Network Access" URL shown in the startup message (e.g., http://192.168.0.64:5001).
 
-## 📱 GUI Version (`obp-GUI.py`)
+How It Works
+Task Queuing & Processing
+The system operates on a simple principle: queue now, process later.
 
-Clean web interface accessible from any device:
+Add Tasks: Throughout the day, you add tasks using either the web GUI or the CLI. You can define the task type and add specific instructions using metadata.
 
-- **Add tasks** with enhanced metadata builder
-- **Monitor progress** with real-time step tracking
-- **View results** with formatted display
-- **Browse files** in integrated workspace browser
-- **Gallery view** at `/gallery` for visual task browsing with CLI/GUI database switching
-- **Download files** individually or as workspace zip
-- **Mobile responsive** for phones/tablets
+Process Queue: When you're ready, you start the processor. It works through the queue one task at a time, sending carefully crafted prompts to your local Ollama model.
 
-![GUI Features](https://img.shields.io/badge/Design-Minimal%20Black%20%26%20White-000000)
+Get Results: The system saves the results of each task to an SQLite database and as individual files in the results/ directory. The process is fault-tolerant; if it crashes, it remembers where it left off.
 
-### Enhanced GUI Features
-- **Task Management**: Edit/delete tasks with confirmation dialogs
-- **Mobile Optimized**: Network diagnostics and QR codes for easy phone access
-- **Processing Control**: Auto-stop when complete, real-time status updates
-- **Gallery View**: Visual task browser with CLI/GUI database switching
-- **File Browser**: Download/upload files with workspace management
-- **Progress Tracking**: Real-time step monitoring and metadata building
+Task Format & Metadata
+You can provide tasks in a simple text format or through the GUI's metadata builder. Metadata allows you to customize how each task is handled.
 
-## 💻 CLI Version (`obp-CLI.py`)
+CLI Task Format (tasks.txt):
 
-Power user command-line interface:
-
-```bash
-# Add tasks from file
-python obp-CLI.py --add-file tasks.txt
-
-# Process overnight
-python obp-CLI.py --run
-
-# Start API for remote access
-python obp-CLI.py --api
-```
-
-## 📝 Task Format
-
-Create a `tasks.txt` file:
-
-```txt
 {search}
-Research AI safety developments in 2025
+search_query=AI safety 2025::Research the latest developments in AI safety.
 
 {create}
-Write a blog post about quantum computing
+tone=professional,filename=blog_post.md::Write a blog post about quantum computing.
 
 {code}
-language=python::Create a data visualization script
+language=python,filename=analyzer.py::Create a data visualization script using pandas.
 
-{process}
-Make this text more professional: [your text]
+Metadata Guide:
 
-{chain}
-Research > Analyze > Report::Study renewable energy trends
-```
+Metadata is a set of key-value pairs that give the AI specific instructions.
 
-### Task Types
-- `{search}` - Web research and reports
-- `{create}` - Generate new content
-- `{code}` - Write and debug code
-- `{process}` - Transform existing content
-- `{chain}` - Multi-step workflows
+For Search: search_query, comparison, filename
 
-## 🛠️ Advanced Setup
+For Create: tone, audience, format, filename
 
-### Configuration
-Edit `processor_config.yaml`:
-```yaml
-model: gpt-oss:20b
-temperature: 0.7
-delay_between_items: 2
-```
+For Code: language, filename, include_docs, include_tests
 
-### Web Search (Optional but Recommended)
+For File Ops: operation (e.g., create, search, list), pattern, search_text
 
-1. **Get API Keys** (free tiers available):
-   - Serper: https://serper.dev (2,500 free searches/month)
-   - Tavily: https://tavily.com (1,000 free searches/month)
+Example (Code Task Metadata):
 
-2. **Configure**:
-```bash
-# Copy the example file
+{
+  "language": "python",
+  "filename": "data_analyzer.py",
+  "include_docs": true,
+  "libraries": "pandas,matplotlib"
+}
+
+Advanced Setup & Configuration
+Web Search (Optional but Recommended)
+To allow tasks to access real-time information, you can connect a web search provider.
+
+Get a Free API Key:
+
+Serper: serper.dev (2,500 free searches/month)
+
+Tavily: tavily.com (1,000 free searches/month)
+
+Configure:
+
+# Copy the example environment file
 cp .env.example .env
 
-# Edit .env and add your key(s)
+# Edit the .env file and add your key
 SERPER_API_KEY=your_serper_key_here
-TAVILY_API_KEY=your_tavily_key_here
-```
+# or TAVILY_API_KEY=your_tavily_key_here
 
-3. **Verify Setup**:
-```bash
-python setup_environment.py
-```
+The application will automatically use the key if it's present.
 
-### Custom Workflows
-Create YAML files in `task_configs/`:
-```yaml
+Custom Workflows (YAML)
+You can define or modify task processing steps by editing the YAML files in the task_configs/ directory. This allows you to create highly customized, multi-step workflows.
+
+Example (search_tasks.yaml):
+
 type: search
 steps:
-  - name: web_search
+  - name: web_search        # First, run a web search
     plugin: web_search
-  - name: summarize
-    prompt: "Summarize: {web_search_result}"
-  - name: save
+    optional: true
+  - name: summarize          # Then, summarize the results
+    prompt: "Summarize these search results in a clear, organized way: {web_search_result}"
+  - name: create_report      # Finally, create a detailed report
+    prompt: "Create a detailed report based on this summary: {summarize_result}"
+  - name: save_report        # And save the file
     plugin: file_operations
-```
+    operation: create
+    filename_template: "search_{task_id}.md"
 
-## 📱 Mobile/Network Access
+Docker Deployment (Recommended for Production)
+Docker provides an isolated and consistent environment.
 
-### Phone & Tablet Setup
-1. **Start the GUI**: `python obp-GUI.py`
-2. **Note the IP**: Look for "Network Access" in startup (e.g., `192.168.0.64:5001`)
-3. **Open on Phone**: Navigate to that address in your mobile browser
-4. **Bookmark It**: Save for easy access
+Run Setup Script: This script creates necessary directories and sets permissions.
 
-### Troubleshooting Network Issues
-```bash
-# Diagnose connectivity problems
-python network_test.py
-
-# Common solutions:
-# 1. Check WiFi - same network for both devices
-# 2. macOS Firewall - System Preferences → Security → Firewall → Allow Python
-# 3. Test basic connectivity: ping [ip-address] from phone
-```
-
-## 📦 Installation Options
-
-### Interactive (Recommended)
-```bash
-python install.py
-```
-
-### Manual
-```bash
-# Create virtual environment first
-uv venv  # Or: python -m venv venv
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-
-# Minimal
-pip install requests PyYAML Flask Flask-Cors
-
-# Full
-pip install -r requirements.txt
-
-# Development
-pip install -r requirements-dev.txt
-```
-
-### Docker (Recommended for production)
-
-#### Using Docker Compose (Easiest)
-```bash
-# Setup directories and permissions
 ./docker-setup.sh
 
-# Start the processor
+Start with Docker Compose:
+
+# Build and start the containers in the background
 docker-compose up --build -d
 
-# View logs
-docker-compose logs -f
+Manage:
 
-# Stop the processor
-docker-compose down
-```
+View logs: docker-compose logs -f
 
-#### Using Docker directly
-```bash
-# Build the image
-docker build -t oss-processor .
+Stop: docker-compose down
 
-# Run with volume mounts for persistence
-docker run -d \
-  --name oss-processor \
-  -p 5001:5001 \
-  -v $(pwd)/workspace:/app/workspace \
-  -v $(pwd)/results:/app/results \
-  -v $(pwd)/.env:/app/.env \
-  --add-host host.docker.internal:host-gateway \
-  oss-processor
-```
+Troubleshooting Guide
+1. Quick Diagnosis
 
-**Note**: Make sure Ollama is running on your host machine at `http://localhost:11434`
+First, run the connection test script to diagnose common issues with your Ollama setup.
 
-## 🔧 Commands Reference
+python test_connection.py
 
-### GUI Commands
-```bash
-python obp-GUI.py           # Start web interface
-```
+2. Mobile / Network Access Issues
 
-### CLI Commands
-```bash
-python obp-CLI.py --add-file tasks.txt   # Add tasks
-python obp-CLI.py --run                  # Process tasks
-python obp-CLI.py --status               # Check queue
-python obp-CLI.py --api                  # Start API server
-```
+If you can't access the GUI from your phone or another device:
 
-### Make Commands (Unix/Mac/Linux)
-```bash
-make install      # Install dependencies
-make run-gui      # Start GUI
-make run-cli      # Start CLI
-make demo         # Run demo tasks
-```
+Same Network: Ensure your phone and computer are on the same Wi-Fi network.
 
-## 🆕 Enhanced Features
+Correct IP Address: Use the exact "Network Access" IP address shown in the terminal when you start the app (e.g., http://192.168.0.64:5001), not localhost.
 
-### File CRUD Operations
-The enhanced file operations plugin supports:
-- **Basic**: Create, Read, Update, Delete
-- **Advanced**: Search, Copy, Move, Rename
-- **Backup**: Automatic backups before destructive operations
-- **Search**: Find text across multiple files
-- **Directories**: Create/remove directories
+Firewall: Your OS firewall might be blocking the connection.
 
-Example in tasks:
-```
-{process}
-operation=search,search_text=TODO,pattern=*.py::
-Find all TODOs in Python files
-```
+macOS: Go to System Preferences → Security & Privacy → Firewall and allow incoming connections for "Python".
 
-### Gallery View
-Access visual task management at `/gallery`:
-- **Database Switching**: Toggle between GUI and CLI task databases
-- **Visual Cards**: Task display with filtering, search, and statistics
-- **Task Details**: Click any task for full results and processing steps
-- **Export/Download**: JSON export and file management
+Linux: sudo ufw allow 5001
 
-### Web Search Integration
-All task types now support web search:
-- `search_tasks.yaml` - Primary web search
-- `process_tasks.yaml` - Research before processing
-- `create_tasks.yaml` - Research for content
-- `code_tasks.yaml` - Documentation lookup
-- `chain_tasks.yaml` - Multi-step workflows
+Run Network Test: python network_test.py provides detailed diagnostics.
 
-## 📂 Project Structure
-```
+3. Docker Connection Issues
+
+If the Docker container can't connect to Ollama:
+
+Ensure Ollama is running on your host machine (ollama serve).
+
+Your docker-compose.yml should set OLLAMA_HOST=http://host.docker.internal:11434. This is the standard for Mac and Windows. For Linux, you may need to use http://172.17.0.1:11434.
+
+If you see database errors in Docker, run ./docker-setup.sh again and rebuild with docker-compose up --build.
+
+4. API Key / Web Search Issues
+
+If web search isn't working:
+
+Make sure your .env file exists and contains your actual API key, not the placeholder text.
+
+Restart the application (or Docker container) after editing the .env file.
+
+Project Information
+Project Structure
 oss-batch-processor/
-├── obp-GUI.py              # Web interface with gallery
-├── obp-CLI.py              # Command line interface
-├── file_crud_plugin.py     # Enhanced file operations
-├── gallery_template.html   # Gallery view template
-├── setup_environment.py    # Setup verification script
-├── processor_config.yaml   # Main configuration
-├── task_configs/           # Task type definitions
-│   ├── search_tasks.yaml
-│   ├── create_tasks.yaml
-│   ├── process_tasks.yaml
-│   ├── code_tasks.yaml
-│   └── chain_tasks.yaml
-├── Dockerfile             # Docker container definition
-├── docker-compose.yml     # Docker orchestration
-├── requirements.txt       # Python dependencies
-├── .env.example          # API key template
-├── tasks.txt             # Example tasks
-├── tasks.md              # Task documentation
-├── IMPROVEMENTS.md       # Recent improvements
-├── workspace/            # File operations directory
-├── results/              # Task output files
-├── data/                 # Database directory
-│   ├── task_processor.db    # GUI tasks database
-│   └── universal_processor.db # CLI tasks database  
-└── logs/                 # Application logs
-```
+├── obp-GUI.py              # Main Web interface application
+├── obp-CLI.py              # Main Command-line interface
+├── processor_config.yaml   # Global configuration for the processor
+├── task_configs/           # Directory for custom task workflow definitions
+├── gallery_template.html   # Template for the /gallery view
+├── install.py              # Interactive installer script
+├── Dockerfile              # Docker container definition
+├── docker-compose.yml      # Docker orchestration file
+├── requirements.txt        # Python dependencies
+├── .env.example            # Template for API keys
+├── workspace/              # Default directory for file operations
+├── results/                # Output directory for completed task files
+└── data/                   # Contains the SQLite databases
 
-## 🐛 Troubleshooting
+Contributing
+Pull requests are welcome! Please see CONTRIBUTING.md for guidelines. To set up a development environment:
 
-**Quick Fixes:**
-```bash
-python test_connection.py    # Test Ollama connection
-python network_test.py       # Test mobile access
-./docker-setup.sh           # Fix Docker permissions
-```
-
-**Common Issues:**
-- **Mobile Access**: Use IP from startup message, check firewall settings
-- **Ollama**: Ensure `ollama serve` is running on port 11434
-- **Processing Stuck**: Button auto-resets when queue is empty
-- **API Keys**: Verify `.env` has real keys (not placeholders)
-
-For detailed help: [TROUBLESHOOTING.md](TROUBLESHOOTING.md) | [REQUIREMENTS_GUIDE.md](REQUIREMENTS_GUIDE.md)
-
-## 💡 Use Cases
-
-- **Research Assistant** - Gather information and create reports
-- **Content Creator** - Generate blog posts, articles, documentation
-- **Code Generator** - Build scripts, functions, applications
-- **Data Processor** - Analyze and transform text/data
-- **Workflow Automation** - Chain multiple operations together
-
-## 📊 Example Workflow
-
-**Evening (5 PM):** Add tasks from phone while commuting
-```
-{search} Latest AI breakthroughs
-{create} Blog post about findings
-{code} Python script to track AI papers
-```
-
-**Night (11 PM):** Start processing before bed
-```bash
-python obp-CLI.py --run
-```
-
-**Morning (7 AM):** Review completed work over coffee
-
-## 🤝 Contributing
-
-Pull requests welcome! See [CONTRIBUTING.md](CONTRIBUTING.md)
-
-```bash
-# Setup development environment
-uv venv
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+# Install development and testing tools
 pip install -r requirements-dev.txt
+
+# Run tests
 make test
+
+# Check code formatting
 make lint
-```
 
-## 📄 License
-
-MIT - See [LICENSE](LICENSE)
-
-## 📝 Changelog
-
-### v2.3.0 - Enhanced Mobile & Task Management (Current)
-- ✅ Mobile access improvements with network diagnostics
-- ✅ Task editing and deletion with confirmation dialogs
-- ✅ Auto-stop processing when queue complete
-- ✅ QR code generation for easy phone access (with qrcode library)
-- ✅ Unified Gallery with CLI/GUI database switching
-- ✅ Enhanced network troubleshooting tools
-
-### v2.1.0 - Enhanced GUI & Docker Fixes
-- ✅ Enhanced GUI with file browser and progress tracking
-- ✅ Fixed Docker database permissions and Ollama connection
-- ✅ Added metadata builder interface in GUI
-- ✅ Real-time progress indicators and web search status
-- ✅ File download/upload functionality
-- ✅ Setup and testing scripts (`docker-setup.sh`, `test_connection.py`)
-- ✅ Comprehensive troubleshooting guide
-- ✅ Mobile-responsive design improvements
-
-### v2.0.0 - Major Feature Release
-- ✅ Web search integration (Serper/Tavily APIs)  
-- ✅ Gallery view for visual task browsing
-- ✅ Enhanced file CRUD operations (15+ operations)
-- ✅ Docker support with compose
-- ✅ All task types support web search
-- ✅ Export functionality for results
-
-### v1.0.0 - Initial Release
-- Basic task processing
-- GUI and CLI interfaces
-- SQLite database
-- YAML configuration
-- Ollama integration
-
-## 🙏 Credits
-
-Built for the Ollama community by [@lalomorales22](https://github.com/lalomorales22)
-
-Enhanced with love by the open source community 💜
-
----
-
-**Remember:** Queue tasks by day, wake up to completed work! 🌙✨
-
-For detailed documentation:
-- [IMPROVEMENTS.md](IMPROVEMENTS.md) - Recent improvements and features
-- [METADATA_GUIDE.md](METADATA_GUIDE.md) - How to use metadata for task configuration
-- [TROUBLESHOOTING.md](TROUBLESHOOTING.md) - Complete troubleshooting guide
-- [tasks.md](tasks.md) - Complete task documentation
-- [REQUIREMENTS_GUIDE.md](REQUIREMENTS_GUIDE.md) - Dependency guide
+License
+This project is licensed under the MIT License. See the LICENSE file for details.

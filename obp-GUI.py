@@ -580,37 +580,41 @@ HTML_TEMPLATE = '''
                     <p class="card-description">Queue a task for processing</p>
                 </div>
                 
-                <div class="task-type-selector">
-                    <div class="task-type-btn active" data-type="search">Search</div>
-                    <div class="task-type-btn" data-type="process">Process</div>
-                    <div class="task-type-btn" data-type="create">Create</div>
-                    <div class="task-type-btn" data-type="code">Code</div>
-                    <div class="task-type-btn" data-type="chain">Chain</div>
-                </div>
-                
                 <form id="task-form">
                     <div class="form-group">
-                        <label for="content">Task Description</label>
-                        <textarea id="content" name="content" placeholder="Describe what you want to accomplish..." required></textarea>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label>Metadata (Optional)</label>
-                        <div class="metadata-inputs" id="metadata-container">
-                            <div class="metadata-row">
-                                <input type="text" placeholder="Key" class="meta-key">
-                                <input type="text" placeholder="Value" class="meta-value">
-                                <button type="button" class="button button-ghost icon-button" onclick="removeMetadataRow(this)">×</button>
-                            </div>
-                        </div>
-                        <button type="button" class="button button-secondary" onclick="addMetadataRow()">+ Add Metadata</button>
+                        <label for="command">Describe Your Task</label>
+                        <textarea id="command" name="command" placeholder="Example: Research the latest AI developments and create a comprehensive report..." style="min-height: 120px;" required></textarea>
                     </div>
                     
                     <div class="button-group">
-                        <button type="submit" class="button button-primary">Queue Task</button>
-                        <button type="button" class="button button-secondary" onclick="clearForm()">Clear</button>
+                        <button type="button" class="button button-primary" onclick="interpretTask()">Interpret Task</button>
+                        <button type="button" class="button button-secondary" onclick="clearAll()">Clear</button>
                     </div>
                 </form>
+                
+                <div id="confirmation-area" style="display: none; margin-top: 2rem; padding: 1.5rem; background: var(--secondary); border-radius: var(--radius);">
+                    <h3 style="margin-bottom: 1rem;">Task Interpretation</h3>
+                    
+                    <div style="margin-bottom: 1rem;">
+                        <strong>Type:</strong>
+                        <span id="interpreted-type" class="badge badge-default" style="margin-left: 0.5rem;"></span>
+                    </div>
+                    
+                    <div style="margin-bottom: 1rem;">
+                        <strong>Content:</strong>
+                        <div id="interpreted-content" style="margin-top: 0.5rem; padding: 0.75rem; background: var(--background); border-radius: calc(var(--radius) - 2px); font-size: 0.875rem;"></div>
+                    </div>
+                    
+                    <div style="margin-bottom: 1.5rem;">
+                        <strong>Metadata:</strong>
+                        <div id="interpreted-metadata" style="margin-top: 0.5rem; padding: 0.75rem; background: var(--background); border-radius: calc(var(--radius) - 2px); font-family: monospace; font-size: 0.75rem;"></div>
+                    </div>
+                    
+                    <div class="button-group">
+                        <button class="button button-primary" onclick="confirmAndQueue()">Add to Queue</button>
+                        <button class="button button-secondary" onclick="clearConfirmation()">Clear</button>
+                    </div>
+                </div>
             </div>
             
             <div class="card">
@@ -622,7 +626,6 @@ HTML_TEMPLATE = '''
                 <div class="button-group">
                     <button id="process-btn" class="button button-primary" onclick="startProcessing()">
                         Start Processing
-                        <span id="processing-loader" class="loader" style="display: none;"></span>
                     </button>
                     <button class="button button-destructive" onclick="stopProcessing()">Stop</button>
                     <button class="button button-secondary" onclick="clearCompleted()">Clear Completed</button>
@@ -681,87 +684,86 @@ HTML_TEMPLATE = '''
     <div class="toast" id="toast"></div>
     
     <script>
-        let selectedType = 'search';
         let processingInterval = null;
         let refreshInterval = null;
+        let interpretedTask = null;
         
-        // Task type selection
-        document.querySelectorAll('.task-type-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
-                document.querySelectorAll('.task-type-btn').forEach(b => b.classList.remove('active'));
-                this.classList.add('active');
-                selectedType = this.dataset.type;
-                updatePlaceholder();
-            });
-        });
-        
-        function updatePlaceholder() {
-            const placeholders = {
-                search: "Research AI advancements in healthcare and create a comprehensive report...",
-                process: "Take this text and make it more professional and engaging...",
-                create: "Write a detailed guide about setting up a home automation system...",
-                code: "Create a Python script that processes CSV files and generates charts...",
-                chain: "Research, analyze, and create a report about quantum computing impacts..."
-            };
-            document.getElementById('content').placeholder = placeholders[selectedType] || "Describe your task...";
-        }
-        
-        function addMetadataRow() {
-            const container = document.getElementById('metadata-container');
-            const row = document.createElement('div');
-            row.className = 'metadata-row';
-            row.innerHTML = `
-                <input type="text" placeholder="Key" class="meta-key">
-                <input type="text" placeholder="Value" class="meta-value">
-                <button type="button" class="button button-ghost icon-button" onclick="removeMetadataRow(this)">×</button>
-            `;
-            container.appendChild(row);
-        }
-        
-        function removeMetadataRow(button) {
-            button.parentElement.remove();
-        }
-        
-        function clearForm() {
-            document.getElementById('content').value = '';
-            document.querySelectorAll('.meta-key, .meta-value').forEach(input => input.value = '');
-        }
-        
-        async function submitTask(event) {
-            event.preventDefault();
-            
-            const content = document.getElementById('content').value.trim();
-            if (!content) {
+        async function interpretTask() {
+            const command = document.getElementById('command').value.trim();
+            if (!command) {
                 showToast('Please enter a task description', 'error');
                 return;
             }
             
-            const metadata = {};
-            document.querySelectorAll('.metadata-row').forEach(row => {
-                const key = row.querySelector('.meta-key').value.trim();
-                const value = row.querySelector('.meta-value').value.trim();
-                if (key && value) {
-                    metadata[key] = value;
-                }
-            });
+            // Show loading state
+            const button = event.target;
+            const originalText = button.textContent;
+            button.disabled = true;
+            button.textContent = 'Interpreting...';
             
-            const taskData = {
-                type: selectedType,
-                content: content,
-                metadata: metadata
-            };
+            try {
+                const response = await fetch('/api/interpret_task', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({command: command})
+                });
+                
+                if (response.ok) {
+                    interpretedTask = await response.json();
+                    displayInterpretation(interpretedTask);
+                } else {
+                    const error = await response.json();
+                    showToast('Failed to interpret task: ' + (error.error || 'Unknown error'), 'error');
+                }
+            } catch (error) {
+                showToast('Error: ' + error.message, 'error');
+            } finally {
+                button.disabled = false;
+                button.textContent = originalText;
+            }
+        }
+        
+        function displayInterpretation(task) {
+            // Show the confirmation area
+            document.getElementById('confirmation-area').style.display = 'block';
+            
+            // Display task type
+            const typeSpan = document.getElementById('interpreted-type');
+            typeSpan.textContent = task.type.toUpperCase();
+            typeSpan.className = 'badge badge-default';
+            
+            // Display content
+            document.getElementById('interpreted-content').textContent = task.content;
+            
+            // Display metadata
+            const metadataDiv = document.getElementById('interpreted-metadata');
+            if (task.metadata && Object.keys(task.metadata).length > 0) {
+                metadataDiv.textContent = JSON.stringify(task.metadata, null, 2);
+            } else {
+                metadataDiv.textContent = 'No metadata specified';
+            }
+            
+            // Scroll to confirmation area
+            document.getElementById('confirmation-area').scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        async function confirmAndQueue() {
+            if (!interpretedTask) {
+                showToast('No task to queue', 'error');
+                return;
+            }
             
             try {
                 const response = await fetch('/api/add_task', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify(taskData)
+                    body: JSON.stringify(interpretedTask)
                 });
                 
                 if (response.ok) {
                     const result = await response.json();
                     showToast(`Task queued: ${result.task_id}`);
-                    clearForm();
+                    clearAll();
                     updateStatus();
                     loadTasks();
                 } else {
@@ -772,29 +774,48 @@ HTML_TEMPLATE = '''
             }
         }
         
+        function clearConfirmation() {
+            document.getElementById('confirmation-area').style.display = 'none';
+            interpretedTask = null;
+        }
+        
+        function clearAll() {
+            document.getElementById('command').value = '';
+            clearConfirmation();
+        }
+        
+        function clearForm() {
+            clearAll();
+        }
+        
+        // Keep for backward compatibility but won't be used with new flow
+        async function submitTask(event) {
+            event.preventDefault();
+            // This form submission is now handled through the interpret flow
+            interpretTask();
+        }
+        
         async function startProcessing() {
             const processBtn = document.getElementById('process-btn');
-            document.getElementById('processing-loader').style.display = 'inline-block';
             processBtn.disabled = true;
+            processBtn.innerHTML = 'Processing... <span class="loader" style="display: inline-block;"></span>';
             
             try {
                 const response = await fetch('/api/start_processing', {method: 'POST'});
                 if (response.ok) {
                     showToast('Processing started');
                     processingInterval = setInterval(updateStatus, 2000);
-                    processBtn.textContent = 'Processing...';
                     processBtn.classList.add('processing');
                 }
             } catch (error) {
                 showToast('Error starting processing', 'error');
-                document.getElementById('processing-loader').style.display = 'none';
+                processBtn.innerHTML = 'Start Processing';
                 processBtn.disabled = false;
             }
         }
         
         async function stopProcessing() {
             const processBtn = document.getElementById('process-btn');
-            document.getElementById('processing-loader').style.display = 'none';
             
             try {
                 const response = await fetch('/api/stop_processing', {method: 'POST'});
@@ -804,7 +825,7 @@ HTML_TEMPLATE = '''
                         clearInterval(processingInterval);
                         processingInterval = null;
                     }
-                    processBtn.textContent = 'Start Processing';
+                    processBtn.innerHTML = 'Start Processing';
                     processBtn.classList.remove('processing');
                     processBtn.disabled = false;
                 }
@@ -852,19 +873,16 @@ HTML_TEMPLATE = '''
                     
                     // Update button state based on actual processing status
                     const processBtn = document.getElementById('process-btn');
-                    const processLoader = document.getElementById('processing-loader');
                     const isProcessing = stats.processing === true;
                     
                     if (isProcessing) {
-                        processBtn.textContent = 'Processing...';
+                        processBtn.innerHTML = 'Processing... <span class="loader" style="display: inline-block;"></span>';
                         processBtn.classList.add('processing');
                         processBtn.disabled = true;
-                        processLoader.style.display = 'inline-block';
                     } else {
-                        processBtn.textContent = 'Start Processing';
+                        processBtn.innerHTML = 'Start Processing';
                         processBtn.classList.remove('processing');
                         processBtn.disabled = false;
-                        processLoader.style.display = 'none';
                         
                         // Clear processing interval when processing stops
                         if (processingInterval) {
@@ -1323,7 +1341,6 @@ HTML_TEMPLATE = '''
         // Initial load
         updateStatus();
         loadTasks();
-        updatePlaceholder();
         
         // Start auto-refresh
         refreshInterval = setInterval(() => {
@@ -1334,6 +1351,57 @@ HTML_TEMPLATE = '''
 </body>
 </html>
 '''
+
+def create_ai_router_prompt():
+    """Create a system prompt for the AI to interpret user commands into task JSON"""
+    return """You are a Task Interpreter for a batch processing system. Your role is to analyze user commands and convert them into structured task JSON objects.
+
+Based on the user's input, determine the appropriate task type and extract relevant metadata.
+
+Task Types:
+- search: For research, web searches, information gathering
+- process: For text processing, formatting, improving existing content
+- create: For generating new content from scratch
+- code: For programming, script generation, code analysis
+- chain: For multi-step complex tasks
+
+Use the following metadata guidelines:
+
+For SEARCH tasks:
+- search_query: The main search topic
+- comparison: true if comparing multiple things
+- filename: Output filename (default: research_report.md)
+
+For PROCESS tasks:
+- format: Output format (bullet_points, markdown, json)
+- improve_clarity: true to enhance clarity
+- simplify: true to simplify content
+
+For CREATE tasks:
+- tone: Writing tone (professional, casual, conversational)
+- audience: Target audience
+- format: Output format
+- filename: Output filename
+
+For CODE tasks:
+- language: Programming language (python, javascript, etc)
+- filename: Output filename with appropriate extension
+- include_docs: true to include documentation
+- include_tests: true to include tests
+
+For CHAIN tasks:
+- Include relevant metadata for the overall workflow
+
+IMPORTANT: Return ONLY a clean JSON object with this structure:
+{
+  "type": "task_type_here",
+  "content": "the user's request clearly stated",
+  "metadata": {
+    "key": "value"
+  }
+}
+
+Do not include any explanation, markdown formatting, or additional text. Only return the JSON object."""
 
 # Processor class (simplified for single file)
 class TaskProcessor:
@@ -1670,6 +1738,61 @@ def index():
     return render_template_string(HTML_TEMPLATE, 
                                  server_info=server_info,
                                  model=processor.config['model'])
+
+@app.route('/api/interpret_task', methods=['POST'])
+def interpret_task():
+    """Interpret user's natural language command into structured task JSON"""
+    try:
+        data = request.json
+        user_command = data.get('command', '').strip()
+        
+        if not user_command:
+            return jsonify({'error': 'No command provided'}), 400
+        
+        # Create the prompt for the AI
+        system_prompt = create_ai_router_prompt()
+        
+        # Combine system prompt with user command
+        full_prompt = f"{system_prompt}\n\nUser Command: {user_command}\n\nTask JSON:"
+        
+        # Process with Ollama to get interpretation
+        interpretation = processor.process_with_ollama(full_prompt)
+        
+        # Try to parse the response as JSON
+        try:
+            # Clean the response - remove any markdown formatting
+            cleaned = interpretation.strip()
+            if cleaned.startswith('```'):
+                # Remove markdown code blocks
+                cleaned = cleaned.split('```')[1]
+                if cleaned.startswith('json'):
+                    cleaned = cleaned[4:]
+            
+            task_json = json.loads(cleaned)
+            
+            # Validate the structure
+            if 'type' not in task_json or 'content' not in task_json:
+                raise ValueError("Missing required fields")
+            
+            # Ensure metadata exists
+            if 'metadata' not in task_json:
+                task_json['metadata'] = {}
+            
+            return jsonify(task_json)
+            
+        except (json.JSONDecodeError, ValueError) as e:
+            logger.error(f"Failed to parse AI interpretation: {e}")
+            # Fallback: try to extract meaningful parts
+            return jsonify({
+                'type': 'process',
+                'content': user_command,
+                'metadata': {},
+                'error': 'Could not fully interpret command, using defaults'
+            })
+            
+    except Exception as e:
+        logger.error(f"Error in interpret_task: {e}")
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/add_task', methods=['POST'])
 def add_task():
