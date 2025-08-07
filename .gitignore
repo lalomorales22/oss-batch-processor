@@ -115,5 +115,3 @@ coverage.xml
 .mypy_cache/
 .dmypy.json
 dmypy.json
-TROUBLESHOOTING.md
-IMPROVEMENTS.md
