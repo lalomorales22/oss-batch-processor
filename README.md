@@ -1,5 +1,5 @@
 # OSS Batch Processor
-<img width="626" height="866" alt="Screenshot 2025-08-06 at 2 22 36 PM" src="https://github.com/user-attachments/assets/062eeeea-a9b2-44be-8d1b-90943256a85d" />
+
 
 **Queue tasks during the day, wake up to completed work.** An overnight AI assistant that processes ANY task using your local LLM while you sleep.
 
@@ -7,6 +7,8 @@
 ![Ollama](https://img.shields.io/badge/ollama-compatible-green.svg)
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Docker](https://img.shields.io/badge/docker-ready-blue.svg)
+
+<img width="626" height="866" alt="Screenshot 2025-08-06 at 2 22 36 PM" src="https://github.com/user-attachments/assets/062eeeea-a9b2-44be-8d1b-90943256a85d" />
 
 ## 🎉 Latest Updates (v2.1)
 
