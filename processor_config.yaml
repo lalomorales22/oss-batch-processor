@@ -8,6 +8,6 @@ model: gpt-oss:20b
 ollama_host: http://localhost:11434
 save_interval: 5
 task_configs_dir: task_configs
-temperature: 0.7
+temperature: 0.8
 top_p: 0.9
 

@@ -836,6 +836,18 @@ HTML_TEMPLATE = '''
                     document.getElementById('stat-processing').textContent = stats.processing || 0;
                     document.getElementById('stat-completed').textContent = stats.completed || 0;
                     document.getElementById('stat-failed').textContent = stats.failed || 0;
+                    
+                    // Update button state based on actual processing status
+                    const processBtn = document.getElementById('process-btn');
+                    const isProcessing = stats.processing === true;
+                    
+                    if (isProcessing) {
+                        processBtn.textContent = 'Stop Processing';
+                        processBtn.classList.add('processing');
+                    } else {
+                        processBtn.textContent = 'Start Processing';
+                        processBtn.classList.remove('processing');
+                    }
                 }
             } catch (error) {
                 console.error('Status update error:', error);
@@ -846,7 +858,8 @@ HTML_TEMPLATE = '''
             try {
                 const response = await fetch('/api/tasks');
                 if (response.ok) {
-                    const tasks = await response.json();
+                    const data = await response.json();
+                    const tasks = data.tasks || data; // Handle both formats
                     renderTasks(tasks);
                 }
             } catch (error) {
@@ -896,6 +909,10 @@ HTML_TEMPLATE = '''
         }
         
         function switchTab(tabName) {
+            // Update current tab tracker
+            currentTab = tabName;
+            
+            // Update tab buttons
             document.querySelectorAll('.tab-trigger').forEach(tab => {
                 tab.classList.remove('active');
             });
@@ -903,8 +920,25 @@ HTML_TEMPLATE = '''
                 content.classList.remove('active');
             });
             
-            event.target.classList.add('active');
-            document.getElementById(`tab-${tabName}`).classList.add('active');
+            // Find the clicked button and activate it
+            const clickedButton = Array.from(document.querySelectorAll('.tab-trigger'))
+                .find(btn => btn.textContent.toLowerCase().includes(tabName) || btn.onclick?.toString().includes(tabName));
+            if (clickedButton) {
+                clickedButton.classList.add('active');
+            }
+            
+            // Show the correct tab content
+            const tabContent = document.getElementById(`tab-${tabName}`);
+            if (tabContent) {
+                tabContent.classList.add('active');
+                
+                // Load content based on tab
+                if (tabName === 'files') {
+                    refreshFiles();
+                } else if (tabName === 'results') {
+                    loadCompletedTasks();
+                }
+            }
         }
         
         function showToast(message, type = 'success') {
@@ -1053,13 +1087,72 @@ HTML_TEMPLATE = '''
         // Track current tab for refresh
         let currentTab = 'queue';
         
-        function switchTab(tab) {
-            currentTab = tab;
-            // ... existing switchTab code ...
-            if (tab === 'files' && document.getElementById('files-list').innerHTML.includes('Click refresh')) {
-                refreshFiles();
+        // Load completed tasks for results tab
+        async function loadCompletedTasks() {
+            try {
+                const response = await fetch('/api/tasks');
+                if (response.ok) {
+                    const data = await response.json();
+                    const tasks = data.tasks || data;
+                    const completedTasks = tasks.filter(t => t.status === 'completed');
+                    
+                    const resultsDiv = document.getElementById('results-list');
+                    if (completedTasks.length === 0) {
+                        resultsDiv.innerHTML = '<div class="empty-state">No completed tasks</div>';
+                        return;
+                    }
+                    
+                    resultsDiv.innerHTML = completedTasks.map(task => `
+                        <div class="task-item" style="margin-bottom: 1rem; padding: 1rem; border: 1px solid #ddd; border-radius: 0.5rem;">
+                            <div style="display: flex; justify-content: between; margin-bottom: 0.5rem;">
+                                <strong>${task.type}</strong>
+                                <small>${new Date(task.created_at).toLocaleString()}</small>
+                            </div>
+                            <div style="margin-bottom: 0.5rem; font-size: 0.875rem;">
+                                ${task.content.substring(0, 150)}...
+                            </div>
+                            <button onclick="viewTaskResults('${task.id}')" class="btn" style="font-size: 0.75rem;">View Results</button>
+                        </div>
+                    `).join('');
+                }
+            } catch (error) {
+                console.error('Error loading completed tasks:', error);
             }
         }
+        
+        // View individual task results
+        async function viewTaskResults(taskId) {
+            try {
+                const response = await fetch(`/api/task/${taskId}`);
+                if (response.ok) {
+                    const task = await response.json();
+                    const resultsDiv = document.getElementById('results-list');
+                    
+                    let resultsHtml = '<div class="result-viewer">';
+                    resultsHtml += `<h3>Task: ${task.type}</h3>`;
+                    resultsHtml += `<p><strong>Content:</strong> ${task.content}</p>`;
+                    resultsHtml += `<p><strong>Processing Time:</strong> ${task.processing_time}s</p>`;
+                    resultsHtml += '<h4>Results:</h4>';
+                    
+                    if (task.results && typeof task.results === 'object') {
+                        Object.entries(task.results).forEach(([key, value]) => {
+                            resultsHtml += `<div style="margin-bottom: 1rem;">`;
+                            resultsHtml += `<h5>${key.replace(/_/g, ' ').toUpperCase()}</h5>`;
+                            resultsHtml += `<pre style="background: #f5f5f5; padding: 1rem; border-radius: 0.25rem; white-space: pre-wrap; font-size: 0.875rem;">${typeof value === 'string' ? value : JSON.stringify(value, null, 2)}</pre>`;
+                            resultsHtml += `</div>`;
+                        });
+                    }
+                    
+                    resultsHtml += `<button onclick="loadCompletedTasks()" class="btn" style="margin-top: 1rem;">← Back to Results</button>`;
+                    resultsHtml += '</div>';
+                    
+                    resultsDiv.innerHTML = resultsHtml;
+                }
+            } catch (error) {
+                console.error('Error loading task results:', error);
+            }
+        }
+        
         
         // Form submission
         document.getElementById('task-form').addEventListener('submit', submitTask);
@@ -1274,7 +1367,10 @@ class TaskProcessor:
                 self.process_task(task)
                 time.sleep(2)  # Delay between tasks
             else:
-                time.sleep(5)  # Check for new tasks
+                # No more pending tasks, stop processing
+                logger.info("No more pending tasks, stopping processing")
+                self.processing = False
+                break
     
     def get_stats(self):
         return {
@@ -1333,7 +1429,9 @@ def add_task():
 
 @app.route('/api/status')
 def status():
-    return jsonify(processor.get_stats())
+    stats = processor.get_stats()
+    stats['processing'] = processor.processing
+    return jsonify(stats)
 
 @app.route('/api/tasks')
 def get_tasks():
@@ -1343,7 +1441,7 @@ def get_tasks():
         task_dict['type'] = task.type.value
         task_dict['status'] = task.status.value
         tasks_data.append(task_dict)
-    return jsonify(tasks_data)
+    return jsonify({'tasks': tasks_data})
 
 @app.route('/api/task/<task_id>')
 def get_task(task_id):
