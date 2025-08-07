@@ -1,0 +1,16 @@
+type: process
+steps:
+  - name: web_research
+    plugin: web_search
+    prompt: null
+    optional: true
+  - name: analyze
+    prompt: 'Analyze this content and identify key points: {content}. Context from research: {web_research}'
+  - name: improve
+    prompt: 'Improve and enhance this content based on analysis: {analyze}'
+  - name: final_polish
+    prompt: 'Give this a final polish and make it perfect: {improve}'
+  - name: save_result
+    plugin: file_operations
+    operation: create
+    filename_template: process_{task_id}.md

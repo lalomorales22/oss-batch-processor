@@ -22,6 +22,13 @@ from enum import Enum
 from abc import ABC, abstractmethod
 import traceback
 
+# Load environment variables from .env file
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    logger.warning("python-dotenv not installed, environment variables from .env file won't be loaded")
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -223,7 +230,12 @@ class UniversalTaskProcessor:
         self.queue_file = Path("task_queue.json")
         self.results_dir = Path("results")
         self.results_dir.mkdir(exist_ok=True)
-        self.db_path = Path("universal_processor.db")
+        # Use data directory for database in Docker, current dir otherwise
+        data_dir = Path("data")
+        if data_dir.exists():
+            self.db_path = data_dir / "universal_processor.db"
+        else:
+            self.db_path = Path("universal_processor.db")
         
         # Load base configuration
         self.config = self.load_base_config()
@@ -236,8 +248,8 @@ class UniversalTaskProcessor:
         self.plugins: Dict[str, TaskPlugin] = {}
         self.init_plugins()
         
-        # Ollama settings
-        self.api_base = self.config.get('ollama_host', 'http://localhost:11434')
+        # Ollama settings - check environment variable first
+        self.api_base = os.getenv('OLLAMA_HOST') or self.config.get('ollama_host', 'http://localhost:11434')
         self.session = requests.Session()
         self.session.timeout = None  # No timeout
         
@@ -277,7 +289,7 @@ class UniversalTaskProcessor:
                 'max_tokens': -1,
                 'task_configs_dir': 'task_configs',
                 'enable_web_api': True,
-                'api_port': 5000
+                'api_port': 5001
             }
             with open(self.base_config_file, 'w') as f:
                 yaml.dump(default_config, f, default_flow_style=False)
@@ -590,6 +602,9 @@ class UniversalTaskProcessor:
     
     def format_prompt(self, template: str, task: Task) -> str:
         """Format prompt template with task data"""
+        if not template:
+            return ""
+            
         prompt = template
         
         # Replace {content} with task content
@@ -598,17 +613,37 @@ class UniversalTaskProcessor:
         # Replace {task_id} with task ID
         prompt = prompt.replace('{task_id}', task.id)
         
-        # Replace results from previous steps
+        # Replace results from previous steps - both with and without _result suffix
         for result_key, result_value in task.results.items():
-            placeholder = f'{{{result_key}_result}}'
+            # Try with _result suffix for backward compatibility
+            placeholder_result = f'{{{result_key}_result}}'
+            if placeholder_result in prompt:
+                prompt = prompt.replace(placeholder_result, str(result_value))
+            
+            # Try without suffix (new format)
+            placeholder = f'{{{result_key}}}'
             if placeholder in prompt:
-                prompt = prompt.replace(placeholder, str(result_value))
+                # Format the result value appropriately
+                if isinstance(result_value, dict):
+                    formatted_value = json.dumps(result_value, indent=2)
+                elif isinstance(result_value, list):
+                    formatted_value = '\n'.join(str(item) for item in result_value)
+                else:
+                    formatted_value = str(result_value)
+                prompt = prompt.replace(placeholder, formatted_value)
         
         # Replace metadata values
         for meta_key, meta_value in task.metadata.items():
             placeholder = f'{{{meta_key}}}'
             if placeholder in prompt:
                 prompt = prompt.replace(placeholder, str(meta_value))
+        
+        # Handle any remaining placeholders with empty string to avoid errors
+        import re
+        remaining_placeholders = re.findall(r'\{[^}]+\}', prompt)
+        for placeholder in remaining_placeholders:
+            if placeholder not in ['{', '}']:  # Skip literal braces
+                prompt = prompt.replace(placeholder, '')
         
         return prompt
     
@@ -779,7 +814,7 @@ class UniversalTaskProcessor:
                 return jsonify(task_dict)
             return jsonify({'error': 'Task not found'}), 404
         
-        port = self.config.get('api_port', 5000)
+        port = self.config.get('api_port', 5001)
         logger.info(f"Starting web API on port {port}")
         app.run(host='0.0.0.0', port=port, threaded=True)
 
@@ -809,7 +844,7 @@ def main():
             if count > 0:
                 print(f"  {task_type.value}: {count}")
     else:
-        print("Usage: python universal_processor.py [--add-file tasks.txt] [--run] [--api] [--status]")
+        print("Usage: python obp-CLI.py [--add-file tasks.txt] [--run] [--api] [--status]")
 
 if __name__ == "__main__":
     main()

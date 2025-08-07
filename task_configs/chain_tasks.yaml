@@ -1,0 +1,19 @@
+type: chain
+steps:
+  - name: initial_research
+    plugin: web_search
+    prompt: null
+  - name: analyze_research
+    prompt: 'Analyze the research findings and identify key insights: {initial_research}'
+  - name: generate_ideas
+    prompt: 'Based on the analysis, generate creative ideas and solutions: {analyze_research}'
+  - name: develop_plan
+    prompt: 'Develop a detailed action plan based on these ideas: {generate_ideas}'
+  - name: create_implementation
+    prompt: 'Create the implementation based on the plan: {develop_plan}'
+  - name: review_and_refine
+    prompt: 'Review and refine the implementation for quality: {create_implementation}'
+  - name: save_chain_result
+    plugin: file_operations
+    operation: create
+    filename_template: chain_{task_id}.md

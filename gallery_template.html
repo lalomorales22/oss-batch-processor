@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Gallery - OSS Batch Processor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #f9fafb;
+            color: #1f2937;
+            line-height: 1.6;
+        }
+        
+        .header {
+            background: #000;
+            color: #fff;
+            padding: 1.5rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .header h1 {
+            font-size: 1.875rem;
+            font-weight: 700;
+        }
+        
+        .controls {
+            background: #fff;
+            padding: 1.5rem;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        
+        .filter-group {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+        
+        .filter-group label {
+            font-weight: 500;
+            color: #6b7280;
+        }
+        
+        select, input[type="text"] {
+            padding: 0.5rem 1rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem;
+            background: #fff;
+            font-size: 0.875rem;
+        }
+        
+        .gallery {
+            padding: 1.5rem;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .task-card {
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.5rem;
+            overflow: hidden;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        
+        .task-card:hover {
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+        
+        .task-header {
+            padding: 1rem;
+            border-bottom: 1px solid #e5e7eb;
+            background: #f9fafb;
+        }
+        
+        .task-type {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-bottom: 0.5rem;
+        }
+        
+        .type-search { background: #dbeafe; color: #1e40af; }
+        .type-create { background: #d1fae5; color: #065f46; }
+        .type-process { background: #fef3c7; color: #92400e; }
+        .type-code { background: #e9d5ff; color: #6b21a8; }
+        .type-chain { background: #fce7f3; color: #9f1239; }
+        
+        .task-id {
+            font-size: 0.875rem;
+            color: #6b7280;
+            font-family: monospace;
+        }
+        
+        .task-content {
+            padding: 1rem;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+        
+        .task-content-preview {
+            font-size: 0.875rem;
+            color: #4b5563;
+            line-height: 1.5;
+        }
+        
+        .task-footer {
+            padding: 1rem;
+            border-top: 1px solid #e5e7eb;
+            background: #f9fafb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.75rem;
+            color: #6b7280;
+        }
+        
+        .status-badge {
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-weight: 600;
+        }
+        
+        .status-completed { background: #d1fae5; color: #065f46; }
+        .status-failed { background: #fee2e2; color: #991b1b; }
+        .status-processing { background: #dbeafe; color: #1e40af; }
+        .status-pending { background: #f3f4f6; color: #6b7280; }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            padding: 2rem;
+            overflow-y: auto;
+        }
+        
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-content {
+            background: #fff;
+            border-radius: 0.5rem;
+            max-width: 900px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+        }
+        
+        .modal-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-body {
+            padding: 1.5rem;
+        }
+        
+        .close-button {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #6b7280;
+        }
+        
+        .close-button:hover {
+            color: #1f2937;
+        }
+        
+        .result-section {
+            margin-bottom: 1.5rem;
+        }
+        
+        .result-section h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: #1f2937;
+        }
+        
+        .result-content {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.375rem;
+            padding: 1rem;
+            font-family: monospace;
+            font-size: 0.875rem;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: #6b7280;
+        }
+        
+        .empty-state h2 {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            padding: 1.5rem;
+            background: #fff;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .stat-card {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #1f2937;
+        }
+        
+        .stat-label {
+            font-size: 0.875rem;
+            color: #6b7280;
+        }
+        
+        .export-button {
+            padding: 0.5rem 1rem;
+            background: #000;
+            color: #fff;
+            border: none;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        
+        .export-button:hover {
+            background: #1f2937;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Task Gallery</h1>
+    </div>
+    
+    <div class="stats" id="stats">
+        <div class="stat-card">
+            <div class="stat-value" id="total-tasks">0</div>
+            <div class="stat-label">Total Tasks</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" id="completed-tasks">0</div>
+            <div class="stat-label">Completed</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" id="failed-tasks">0</div>
+            <div class="stat-label">Failed</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" id="processing-time">0s</div>
+            <div class="stat-label">Total Time</div>
+        </div>
+    </div>
+    
+    <div class="controls">
+        <div class="filter-group">
+            <label>Type:</label>
+            <select id="type-filter">
+                <option value="">All Types</option>
+                <option value="search">Search</option>
+                <option value="create">Create</option>
+                <option value="process">Process</option>
+                <option value="code">Code</option>
+                <option value="chain">Chain</option>
+            </select>
+        </div>
+        
+        <div class="filter-group">
+            <label>Status:</label>
+            <select id="status-filter">
+                <option value="">All Status</option>
+                <option value="completed">Completed</option>
+                <option value="failed">Failed</option>
+                <option value="processing">Processing</option>
+                <option value="pending">Pending</option>
+            </select>
+        </div>
+        
+        <div class="filter-group">
+            <label>Search:</label>
+            <input type="text" id="search-filter" placeholder="Search tasks...">
+        </div>
+        
+        <button class="export-button" onclick="exportResults()">Export All Results</button>
+    </div>
+    
+    <div class="gallery" id="gallery">
+        <!-- Task cards will be inserted here -->
+    </div>
+    
+    <div class="modal" id="task-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modal-title">Task Details</h2>
+                <button class="close-button" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="modal-body">
+                <!-- Task details will be inserted here -->
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let allTasks = [];
+        
+        async function loadTasks() {
+            try {
+                const response = await fetch('/api/tasks');
+                const data = await response.json();
+                allTasks = data.tasks || [];
+                updateStats();
+                renderGallery();
+            } catch (error) {
+                console.error('Error loading tasks:', error);
+            }
+        }
+        
+        function updateStats() {
+            const total = allTasks.length;
+            const completed = allTasks.filter(t => t.status === 'completed').length;
+            const failed = allTasks.filter(t => t.status === 'failed').length;
+            const totalTime = allTasks.reduce((sum, t) => sum + (t.processing_time || 0), 0);
+            
+            document.getElementById('total-tasks').textContent = total;
+            document.getElementById('completed-tasks').textContent = completed;
+            document.getElementById('failed-tasks').textContent = failed;
+            document.getElementById('processing-time').textContent = totalTime.toFixed(1) + 's';
+        }
+        
+        function renderGallery() {
+            const gallery = document.getElementById('gallery');
+            const typeFilter = document.getElementById('type-filter').value;
+            const statusFilter = document.getElementById('status-filter').value;
+            const searchFilter = document.getElementById('search-filter').value.toLowerCase();
+            
+            let filteredTasks = allTasks;
+            
+            if (typeFilter) {
+                filteredTasks = filteredTasks.filter(t => t.type === typeFilter);
+            }
+            
+            if (statusFilter) {
+                filteredTasks = filteredTasks.filter(t => t.status === statusFilter);
+            }
+            
+            if (searchFilter) {
+                filteredTasks = filteredTasks.filter(t => 
+                    t.content.toLowerCase().includes(searchFilter) ||
+                    t.id.toLowerCase().includes(searchFilter) ||
+                    JSON.stringify(t.results).toLowerCase().includes(searchFilter)
+                );
+            }
+            
+            if (filteredTasks.length === 0) {
+                gallery.innerHTML = `
+                    <div class="empty-state">
+                        <h2>No tasks found</h2>
+                        <p>Try adjusting your filters or add some tasks to get started.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            gallery.innerHTML = filteredTasks.map(task => `
+                <div class="task-card" onclick="showTaskDetails('${task.id}')">
+                    <div class="task-header">
+                        <div class="task-type type-${task.type}">${task.type}</div>
+                        <div class="task-id">${task.id}</div>
+                    </div>
+                    <div class="task-content">
+                        <div class="task-content-preview">
+                            ${escapeHtml(task.content.substring(0, 200))}${task.content.length > 200 ? '...' : ''}
+                        </div>
+                    </div>
+                    <div class="task-footer">
+                        <span class="status-badge status-${task.status}">${task.status}</span>
+                        <span>${new Date(task.created_at).toLocaleDateString()}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        async function showTaskDetails(taskId) {
+            try {
+                const response = await fetch(`/api/task/${taskId}`);
+                const task = await response.json();
+                
+                const modal = document.getElementById('task-modal');
+                const modalTitle = document.getElementById('modal-title');
+                const modalBody = document.getElementById('modal-body');
+                
+                modalTitle.textContent = `Task ${task.id}`;
+                
+                let resultsHtml = '';
+                if (task.results && Object.keys(task.results).length > 0) {
+                    for (const [key, value] of Object.entries(task.results)) {
+                        resultsHtml += `
+                            <div class="result-section">
+                                <h3>${formatKey(key)}</h3>
+                                <div class="result-content">${formatResult(value)}</div>
+                            </div>
+                        `;
+                    }
+                } else {
+                    resultsHtml = '<p>No results available yet.</p>';
+                }
+                
+                modalBody.innerHTML = `
+                    <div class="result-section">
+                        <h3>Task Information</h3>
+                        <div class="result-content">
+Type: ${task.type}
+Status: ${task.status}
+Created: ${new Date(task.created_at).toLocaleString()}
+Processing Time: ${task.processing_time ? task.processing_time.toFixed(2) + 's' : 'N/A'}
+${task.error ? 'Error: ' + task.error : ''}
+                        </div>
+                    </div>
+                    
+                    <div class="result-section">
+                        <h3>Input Content</h3>
+                        <div class="result-content">${escapeHtml(task.content)}</div>
+                    </div>
+                    
+                    ${resultsHtml}
+                `;
+                
+                modal.classList.add('active');
+            } catch (error) {
+                console.error('Error loading task details:', error);
+            }
+        }
+        
+        function closeModal() {
+            document.getElementById('task-modal').classList.remove('active');
+        }
+        
+        function formatKey(key) {
+            return key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        }
+        
+        function formatResult(value) {
+            if (typeof value === 'object') {
+                return JSON.stringify(value, null, 2);
+            }
+            return escapeHtml(String(value));
+        }
+        
+        function escapeHtml(text) {
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.replace(/[&<>"']/g, m => map[m]);
+        }
+        
+        async function exportResults() {
+            const completedTasks = allTasks.filter(t => t.status === 'completed');
+            const exportData = {
+                exported_at: new Date().toISOString(),
+                total_tasks: completedTasks.length,
+                tasks: completedTasks
+            };
+            
+            const blob = new Blob([JSON.stringify(exportData, null, 2)], {type: 'application/json'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `task_results_${Date.now()}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+        
+        // Add event listeners
+        document.getElementById('type-filter').addEventListener('change', renderGallery);
+        document.getElementById('status-filter').addEventListener('change', renderGallery);
+        document.getElementById('search-filter').addEventListener('input', renderGallery);
+        
+        // Close modal when clicking outside
+        document.getElementById('task-modal').addEventListener('click', (e) => {
+            if (e.target.id === 'task-modal') {
+                closeModal();
+            }
+        });
+        
+        // Load tasks on page load
+        loadTasks();
+        
+        // Refresh every 5 seconds
+        setInterval(loadTasks, 5000);
+    </script>
+</body>
+</html>

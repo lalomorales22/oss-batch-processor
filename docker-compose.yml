@@ -1,0 +1,51 @@
+services:
+  oss-processor:
+    build: .
+    image: oss-batch-processor:latest
+    container_name: oss-processor
+    ports:
+      - "5001:5001"
+    volumes:
+      # Mount workspace for file persistence
+      - ./workspace:/app/workspace
+      - ./results:/app/results
+      - ./logs:/app/logs
+      # Mount database files (create if they don't exist)
+      - ./data:/app/data
+      # Mount config files for easy editing
+      - ./processor_config.yaml:/app/processor_config.yaml
+      - ./task_configs:/app/task_configs
+      # Mount .env if it exists
+      - ./.env:/app/.env:ro
+    environment:
+      # Ollama connection (use host.docker.internal for Mac/Windows)
+      - OLLAMA_HOST=http://host.docker.internal:11434
+      # Or use this for Linux:
+      # - OLLAMA_HOST=http://172.17.0.1:11434
+      # Pass through API keys from .env file
+      - SERPER_API_KEY=${SERPER_API_KEY}
+      - TAVILY_API_KEY=${TAVILY_API_KEY}
+    restart: unless-stopped
+    networks:
+      - oss-network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  # Optional: Run Ollama in Docker too
+  # ollama:
+  #   image: ollama/ollama:latest
+  #   container_name: ollama
+  #   ports:
+  #     - "11434:11434"
+  #   volumes:
+  #     - ollama_data:/root/.ollama
+  #   restart: unless-stopped
+  #   networks:
+  #     - oss-network
+
+networks:
+  oss-network:
+    driver: bridge
+
+volumes:
+  ollama_data:

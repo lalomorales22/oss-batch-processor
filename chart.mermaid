@@ -1,0 +1,80 @@
+graph TB
+    subgraph "Input Sources"
+        Phone[📱 Phone/Web UI]
+        CLI[💻 CLI]
+        Watch[📁 Watch Folder]
+        API[🔌 REST API]
+        Email[✉️ Email]
+    end
+
+    subgraph "Task Queue System"
+        Router[Task Router]
+        Queue[(SQLite Queue)]
+        TaskFile[tasks.txt]
+        
+        Router --> TypeDetect{Task Type?}
+        TypeDetect --> Search[🔍 Search Tasks]
+        TypeDetect --> Process[⚙️ Process Tasks]
+        TypeDetect --> Create[📝 Create Tasks]
+        TypeDetect --> Chain[🔗 Chain Tasks]
+        TypeDetect --> Code[💻 Code Tasks]
+    end
+
+    subgraph "Task Configs (YAML)"
+        SearchYAML[search_tasks.yaml<br/>- web search<br/>- summarize<br/>- save to file]
+        ProcessYAML[process_tasks.yaml<br/>- rewrite<br/>- translate<br/>- analyze]
+        CreateYAML[create_tasks.yaml<br/>- write document<br/>- generate code<br/>- create report]
+        ChainYAML[chain_tasks.yaml<br/>- multi-step workflows<br/>- conditional logic]
+        CodeYAML[code_tasks.yaml<br/>- run code<br/>- test code<br/>- refactor]
+    end
+
+    subgraph "Processing Engine"
+        Core[Ollama Batch Core]
+        Plugins[Plugin System]
+        
+        Core --> LLM[gpt-oss:20b]
+        Core --> Tools{Tools}
+        Tools --> WebSearch[Web Search<br/>SERPER/TAVILY]
+        Tools --> FileOps[File Operations<br/>Create/Edit/Delete]
+        Tools --> CodeExec[Code Execution<br/>Python/JS]
+        Tools --> DBOps[Database Ops]
+        Tools --> EmailSend[Email Sender]
+    end
+
+    subgraph "Output & Storage"
+        Results[(Results DB)]
+        Files[📁 Output Files]
+        Reports[📊 Reports]
+        Notify[🔔 Notifications]
+    end
+
+    %% Connections
+    Phone --> API
+    API --> Router
+    CLI --> TaskFile
+    Watch --> TaskFile
+    Email --> TaskFile
+    TaskFile --> Router
+    
+    Search --> SearchYAML
+    Process --> ProcessYAML
+    Create --> CreateYAML
+    Chain --> ChainYAML
+    Code --> CodeYAML
+    
+    SearchYAML --> Core
+    ProcessYAML --> Core
+    CreateYAML --> Core
+    ChainYAML --> Core
+    CodeYAML --> Core
+    
+    Core --> Results
+    Core --> Files
+    Core --> Reports
+    Core --> Notify
+
+    style Phone fill:#e1f5fe
+    style API fill:#fff3e0
+    style Core fill:#e8f5e9
+    style LLM fill:#fce4ec
+    style Results fill:#f3e5f5

@@ -1,0 +1,16 @@
+type: code
+steps:
+  - name: search_docs
+    plugin: web_search
+    prompt: null
+    optional: true
+  - name: analyze_requirements
+    prompt: 'Analyze these requirements and plan the implementation: {content}. Reference docs: {search_docs}'
+  - name: write_code
+    prompt: 'Write clean, working code based on this plan: {analyze_requirements}'
+  - name: add_tests
+    prompt: 'Add comprehensive tests for this code: {write_code}'
+  - name: save_code
+    plugin: file_operations
+    operation: create
+    filename_template: code_{task_id}.py

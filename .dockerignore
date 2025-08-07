@@ -1,0 +1,60 @@
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+pip-log.txt
+pip-delete-this-directory.txt
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.log
+.pytest_cache
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Project specific
+workspace/*
+results/*
+logs/*
+*.db
+.env
+task_processor.db
+
+# Documentation
+*.md
+!README.md
+!IMPROVEMENTS.md
+!tasks.md
+
+# Temporary files
+*.tmp
+*.bak
+.deleted/
+.backups/
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore

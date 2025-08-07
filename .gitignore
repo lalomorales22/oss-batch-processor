@@ -4,11 +4,6 @@ __pycache__/
 *$py.class
 *.so
 .Python
-.env
-env/
-venv/
-.venv/
-ENV/
 build/
 develop-eggs/
 dist/
@@ -21,25 +16,19 @@ parts/
 sdist/
 var/
 wheels/
+pip-wheel-metadata/
+share/python-wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+MANIFEST
 
-# UV
-.uv/
-uv.lock
-
-# Project specific
-processing_queue.json
-results/
-*.log
-*.db
-batch_config.yaml
-*.json
-Task-Processor/
-
-# Keep example config
-!example_config.yaml
+# Virtual environments
+venv/
+env/
+ENV/
+.venv/
+.env/
 
 # IDE
 .vscode/
@@ -48,22 +37,82 @@ Task-Processor/
 *.swo
 *~
 .DS_Store
+Thumbs.db
 
-# Testing
-.pytest_cache/
-.coverage
+# Logs
+*.log
+logs/
+universal_processor.log
+
+# Database files (auto-generated)
+*.db
+*.sqlite
+*.sqlite3
+task_processor.db
+universal_processor.db
+
+# Queue files (auto-generated)
+task_queue.json
+
+# Output directories (auto-generated)
+workspace/
+results/
+data/
+.backups/
+.deleted/
+
+# Environment variables (contains secrets)
+.env
+
+# Temporary files
+*.tmp
+*.bak
+temp/
+tmp/
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Docker volumes
+docker-data/
+
+# Test files
+test.db
+test_*.json
+
+# User-specific task files
+tasks.txt
+my-tasks.txt
+new-task.txt
+
+# Keep example files
+!example-tasks.txt
+!.env.example
+
+# Jupyter
+.ipynb_checkpoints
+
+# Coverage reports
 htmlcov/
 .tox/
+.coverage
 .coverage.*
 .cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
 
-chart.mermaid
-REQUIREMENTS_GUIDE.md
-=1.0.0
-=1.2.0
-=2.31.0
-=3.0.0
-=4.0.0
-=6.0.1
-=6.8.0
-.gitignore
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+TROUBLESHOOTING.md
+IMPROVEMENTS.md

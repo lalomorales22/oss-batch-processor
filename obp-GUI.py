@@ -3,7 +3,7 @@
 Universal Task Processor - Complete Flask GUI Application
 Single file with web interface for local network access
 Run: python task_processor_gui.py
-Access: http://your-ip:5000
+Access: http://your-ip:5001
 """
 
 import json
@@ -25,6 +25,14 @@ from enum import Enum
 from flask import Flask, render_template_string, request, jsonify, send_file
 from flask_cors import CORS
 import traceback
+
+# Load environment variables from .env file
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    logger = logging.getLogger(__name__)
+    logger.warning("python-dotenv not installed, environment variables from .env file won't be loaded")
 
 # Configure logging
 logging.basicConfig(
@@ -634,6 +642,8 @@ HTML_TEMPLATE = '''
                     <button class="tab-trigger active" onclick="switchTab('queue')">Task Queue</button>
                     <button class="tab-trigger" onclick="switchTab('results')">Results</button>
                     <button class="tab-trigger" onclick="switchTab('logs')">Logs</button>
+                    <button class="tab-trigger" onclick="switchTab('files')">Files 📁</button>
+                    <a href="/gallery" target="_blank" class="tab-trigger" style="text-decoration: none;">Gallery View 🎨</a>
                 </div>
             </div>
             
@@ -652,6 +662,16 @@ HTML_TEMPLATE = '''
             <div class="tab-content" id="tab-logs">
                 <div class="result-viewer" id="logs-viewer">
                     Logs will appear here...
+                </div>
+            </div>
+            
+            <div class="tab-content" id="tab-files">
+                <div style="margin-bottom: 1rem;">
+                    <button onclick="refreshFiles()" class="btn">🔄 Refresh Files</button>
+                    <button onclick="downloadWorkspace()" class="btn">📦 Download Workspace</button>
+                </div>
+                <div id="files-list">
+                    <div class="empty-state">Click refresh to load workspace files</div>
                 </div>
             </div>
         </div>
@@ -903,6 +923,7 @@ HTML_TEMPLATE = '''
                 refreshInterval = setInterval(() => {
                     updateStatus();
                     loadTasks();
+                    if (currentTab === 'files') refreshFiles();
                 }, 5000);
             } else {
                 if (refreshInterval) {
@@ -911,6 +932,134 @@ HTML_TEMPLATE = '''
                 }
             }
         });
+        
+        // File management functions
+        async function refreshFiles() {
+            try {
+                const response = await fetch('/api/files');
+                if (response.ok) {
+                    const files = await response.json();
+                    displayFiles(files);
+                } else {
+                    showToast('Error loading files', 'error');
+                }
+            } catch (error) {
+                console.error('Error loading files:', error);
+                showToast('Error loading files', 'error');
+            }
+        }
+        
+        function displayFiles(files) {
+            const filesList = document.getElementById('files-list');
+            
+            if (files.length === 0) {
+                filesList.innerHTML = '<div class="empty-state">No files in workspace</div>';
+                return;
+            }
+            
+            filesList.innerHTML = files.map(file => `
+                <div class="task-card" style="cursor: pointer; margin-bottom: 0.5rem;" onclick="downloadFile('${file.name}')">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <strong>${file.name}</strong>
+                            <div style="font-size: 0.75rem; color: #666;">
+                                ${formatFileSize(file.size)} • ${new Date(file.modified).toLocaleDateString()}
+                            </div>
+                        </div>
+                        <button class="btn" onclick="event.stopPropagation(); downloadFile('${file.name}')" style="font-size: 0.75rem;">📥 Download</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+        }
+        
+        async function downloadFile(filename) {
+            try {
+                const response = await fetch(`/api/download/${encodeURIComponent(filename)}`);
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = filename;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(url);
+                    showToast('File downloaded: ' + filename, 'success');
+                } else {
+                    showToast('Error downloading file', 'error');
+                }
+            } catch (error) {
+                showToast('Download failed: ' + error.message, 'error');
+            }
+        }
+        
+        async function downloadWorkspace() {
+            try {
+                const response = await fetch('/api/download/workspace.zip');
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'workspace.zip';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(url);
+                    showToast('Workspace downloaded', 'success');
+                } else {
+                    showToast('Error downloading workspace', 'error');
+                }
+            } catch (error) {
+                showToast('Download failed: ' + error.message, 'error');
+            }
+        }
+        
+        // Enhanced task display with progress
+        function displayEnhancedTask(task) {
+            const results = typeof task.results === 'string' ? JSON.parse(task.results || '{}') : (task.results || {});
+            const steps = Object.keys(results);
+            
+            let progressHtml = '';
+            if (task.status === 'processing' && steps.length > 0) {
+                progressHtml = `
+                    <div style="margin: 0.5rem 0; font-size: 0.75rem;">
+                        <strong>Progress:</strong> ${steps.map(step => 
+                            `<span style="background: #10b981; color: white; padding: 0.25rem 0.5rem; border-radius: 0.25rem; margin: 0 0.25rem;">${step}</span>`
+                        ).join('')}
+                        <span style="background: #f59e0b; color: white; padding: 0.25rem 0.5rem; border-radius: 0.25rem;">Processing...</span>
+                    </div>
+                `;
+            }
+            
+            // Show web search indicator
+            let searchIndicator = '';
+            if (results.web_search || results.search_docs || results.research) {
+                searchIndicator = '<span style="background: #3b82f6; color: white; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem;">🔍 Web Search</span>';
+            }
+            
+            return progressHtml + searchIndicator;
+        }
+        
+        // Track current tab for refresh
+        let currentTab = 'queue';
+        
+        function switchTab(tab) {
+            currentTab = tab;
+            // ... existing switchTab code ...
+            if (tab === 'files' && document.getElementById('files-list').innerHTML.includes('Click refresh')) {
+                refreshFiles();
+            }
+        }
         
         // Form submission
         document.getElementById('task-form').addEventListener('submit', submitTask);
@@ -933,14 +1082,19 @@ HTML_TEMPLATE = '''
 # Processor class (simplified for single file)
 class TaskProcessor:
     def __init__(self):
-        self.db_path = Path("task_processor.db")
+        # Use data directory for database in Docker, current dir otherwise
+        data_dir = Path("data")
+        if data_dir.exists():
+            self.db_path = data_dir / "task_processor.db"
+        else:
+            self.db_path = Path("task_processor.db")
         self.queue_file = Path("task_queue.json")
         self.results_dir = Path("results")
         self.results_dir.mkdir(exist_ok=True)
         
         self.config = {
             'model': 'gpt-oss:20b',
-            'ollama_host': 'http://localhost:11434',
+            'ollama_host': os.getenv('OLLAMA_HOST', 'http://localhost:11434'),
             'temperature': 0.7,
             'max_retries': 3
         }
@@ -1162,7 +1316,7 @@ def get_local_ip():
 
 @app.route('/')
 def index():
-    server_info = f"{get_local_ip()}:5000"
+    server_info = f"{get_local_ip()}:5001"
     return render_template_string(HTML_TEMPLATE, 
                                  server_info=server_info,
                                  model=processor.config['model'])
@@ -1221,14 +1375,88 @@ def reset_failed():
     processor.reset_failed()
     return jsonify({'status': 'reset'})
 
+@app.route('/gallery')
+def gallery():
+    """Serve the gallery view"""
+    gallery_file = Path('gallery_template.html')
+    if gallery_file.exists():
+        return send_file(str(gallery_file))
+    else:
+        return "Gallery template not found", 404
+
+@app.route('/api/export/<task_id>')
+def export_task(task_id):
+    """Export a single task result"""
+    task = processor.get_task(task_id)
+    if task:
+        return jsonify(task)
+    return jsonify({'error': 'Task not found'}), 404
+
+@app.route('/api/files')
+def list_files():
+    """List files in workspace"""
+    workspace_dir = Path('workspace')
+    if not workspace_dir.exists():
+        return jsonify([])
+    
+    files = []
+    for file_path in workspace_dir.rglob('*'):
+        if file_path.is_file():
+            try:
+                stat = file_path.stat()
+                files.append({
+                    'name': str(file_path.relative_to(workspace_dir)),
+                    'size': stat.st_size,
+                    'modified': stat.st_mtime * 1000  # JavaScript timestamp
+                })
+            except:
+                pass
+    
+    return jsonify(files)
+
+@app.route('/api/download/<path:filename>')
+def download_file(filename):
+    """Download a file from workspace"""
+    workspace_dir = Path('workspace')
+    file_path = workspace_dir / filename
+    
+    # Security check - ensure file is within workspace
+    try:
+        file_path.resolve().relative_to(workspace_dir.resolve())
+    except ValueError:
+        return jsonify({'error': 'Access denied'}), 403
+    
+    if file_path.exists() and file_path.is_file():
+        return send_file(str(file_path), as_attachment=True)
+    else:
+        return jsonify({'error': 'File not found'}), 404
+
+@app.route('/api/files/upload', methods=['POST'])
+def upload_file():
+    """Upload a file to workspace"""
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file provided'}), 400
+    
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'error': 'No file selected'}), 400
+    
+    workspace_dir = Path('workspace')
+    workspace_dir.mkdir(exist_ok=True)
+    
+    file_path = workspace_dir / file.filename
+    file.save(str(file_path))
+    
+    return jsonify({'message': 'File uploaded successfully', 'filename': file.filename})
+
 if __name__ == '__main__':
     local_ip = get_local_ip()
     print("\n" + "="*60)
     print("TASK PROCESSOR GUI STARTED")
     print("="*60)
-    print(f"Local Access:   http://localhost:5000")
-    print(f"Network Access: http://{local_ip}:5000")
-    print(f"Phone Access:   http://{local_ip}:5000")
+    print(f"Local Access:   http://localhost:5001")
+    print(f"Network Access: http://{local_ip}:5001")
+    print(f"Phone Access:   http://{local_ip}:5001")
     print("="*60)
     print("Make sure Ollama is running: ollama serve")
     print("="*60 + "\n")

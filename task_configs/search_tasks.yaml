@@ -1,0 +1,13 @@
+type: search
+steps:
+  - name: web_search
+    plugin: web_search
+    prompt: null
+  - name: summarize
+    prompt: 'Summarize these search results in a clear, organized way: {web_search}'
+  - name: create_report
+    prompt: 'Create a detailed report based on this summary: {summarize}'
+  - name: save_report
+    plugin: file_operations
+    operation: create
+    filename_template: search_{task_id}.md

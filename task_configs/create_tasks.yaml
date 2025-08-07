@@ -1,0 +1,16 @@
+type: create
+steps:
+  - name: research
+    plugin: web_search
+    prompt: null
+    optional: true
+  - name: outline
+    prompt: 'Create a detailed outline for: {content}. Use research if available: {research}'
+  - name: draft
+    prompt: 'Write a first draft based on this outline: {outline}'
+  - name: revise
+    prompt: 'Revise and improve this draft: {draft}'
+  - name: save_document
+    plugin: file_operations
+    operation: create
+    filename_template: created_{task_id}.md
