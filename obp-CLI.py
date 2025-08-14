@@ -150,21 +150,49 @@ class FileOperationsPlugin(TaskPlugin):
         
     def execute(self, task: Task, context: Dict[str, Any]) -> Any:
         """Execute file operations"""
-        operation = task.metadata.get('operation', 'create')
-        filename = task.metadata.get('filename', f"{task.id}.txt")
+        # Get operation from step config first, then metadata
+        step = context.get('step', {})
+        operation = step.get('operation') or task.metadata.get('operation', 'create')
+        
+        # Get filename from template or metadata
+        filename_template = step.get('filename_template', '')
+        if filename_template:
+            filename = filename_template.replace('{task_id}', task.id)
+        else:
+            filename = task.metadata.get('filename', f"{task.id}.txt")
+        
         filepath = self.workspace / filename
         
         if operation == 'create':
-            content = task.metadata.get('file_content', task.results.get('final_output', ''))
-            filepath.write_text(content)
+            # Try to get content from various sources
+            content = task.metadata.get('file_content', '')
+            
+            # If no explicit content, look for the last text result
+            if not content and task.results:
+                # Get the last non-plugin result (which would be LLM output)
+                for key in reversed(list(task.results.keys())):
+                    value = task.results[key]
+                    if isinstance(value, str) and value.strip():
+                        # Skip plugin results that look like status messages
+                        if not value.startswith('Created file:') and not value.startswith('Error:'):
+                            content = value
+                            break
+            
+            if not content:
+                content = task.results.get('final_output', '')
+            
+            # Write the content
+            filepath.write_text(content, encoding='utf-8')
             return f"Created file: {filepath}"
         elif operation == 'edit':
             if filepath.exists():
                 original = filepath.read_text()
                 # Apply edits (simplified - in reality would be more complex)
                 new_content = task.metadata.get('new_content', original)
-                filepath.write_text(new_content)
+                filepath.write_text(new_content, encoding='utf-8')
                 return f"Edited file: {filepath}"
+            else:
+                return f"File not found for editing: {filepath}"
         elif operation == 'delete':
             if filepath.exists():
                 filepath.unlink()
@@ -752,6 +780,31 @@ class UniversalTaskProcessor:
         with open(self.queue_file, 'w') as f:
             json.dump(queue_data, f, indent=2)
     
+    def clear_queue(self, clear_all=False):
+        """Clear tasks from the queue
+        
+        Args:
+            clear_all: If True, clear all tasks. If False, clear only pending tasks.
+        """
+        # Count tasks before clearing
+        pending_count = sum(1 for task in self.queue if task.status == TaskStatus.PENDING)
+        total_count = len(self.queue)
+        
+        if clear_all:
+            # Clear all tasks
+            cleared_count = len(self.queue)
+            self.queue = []
+            logger.info(f"Cleared ALL {cleared_count} tasks from queue")
+        else:
+            # Clear only pending tasks from queue
+            self.queue = [task for task in self.queue if task.status != TaskStatus.PENDING]
+            logger.info(f"Cleared {pending_count} pending tasks from queue (kept {len(self.queue)} non-pending tasks)")
+        
+        # Save the updated queue
+        self.save_queue()
+        
+        return pending_count, total_count
+    
     def run_batch(self):
         """Run all tasks in queue"""
         logger.info("=" * 50)
@@ -826,6 +879,8 @@ def main():
     parser.add_argument('--run', action='store_true', help='Run batch processing')
     parser.add_argument('--api', action='store_true', help='Start REST API server')
     parser.add_argument('--status', action='store_true', help='Show queue status')
+    parser.add_argument('--clear', action='store_true', help='Clear all pending tasks from queue')
+    parser.add_argument('--clear-all', action='store_true', help='Clear ALL tasks from queue (including completed/failed)')
     
     args = parser.parse_args()
     
@@ -843,8 +898,43 @@ def main():
             count = sum(1 for t in processor.queue if t.type == task_type)
             if count > 0:
                 print(f"  {task_type.value}: {count}")
+    elif args.clear:
+        # Show current status before clearing
+        print(f"Current queue status: {len(processor.queue)} tasks")
+        pending_count = sum(1 for t in processor.queue if t.status == TaskStatus.PENDING)
+        print(f"  Pending: {pending_count}")
+        print(f"  Processing/Completed/Failed: {len(processor.queue) - pending_count}")
+        
+        # Confirm before clearing
+        if pending_count > 0:
+            response = input(f"\nAre you sure you want to clear {pending_count} pending tasks? (y/N): ")
+            if response.lower() == 'y':
+                cleared, total = processor.clear_queue()
+                print(f"✓ Cleared {cleared} pending tasks from queue")
+                print(f"  Remaining tasks: {len(processor.queue)}")
+            else:
+                print("Clear operation cancelled")
+        else:
+            print("No pending tasks to clear")
+    elif args.clear_all:
+        # Show current status before clearing
+        print(f"Current queue status: {len(processor.queue)} tasks")
+        pending_count = sum(1 for t in processor.queue if t.status == TaskStatus.PENDING)
+        print(f"  Pending: {pending_count}")
+        print(f"  Processing/Completed/Failed: {len(processor.queue) - pending_count}")
+        
+        # Confirm before clearing ALL tasks
+        if len(processor.queue) > 0:
+            response = input(f"\n⚠️  Are you sure you want to clear ALL {len(processor.queue)} tasks? (y/N): ")
+            if response.lower() == 'y':
+                processor.clear_queue(clear_all=True)
+                print(f"✓ Cleared ALL tasks from queue")
+            else:
+                print("Clear operation cancelled")
+        else:
+            print("No tasks to clear")
     else:
-        print("Usage: python obp-CLI.py [--add-file tasks.txt] [--run] [--api] [--status]")
+        print("Usage: python obp-CLI.py [--add-file tasks.txt] [--run] [--api] [--status] [--clear] [--clear-all]")
 
 if __name__ == "__main__":
     main()
