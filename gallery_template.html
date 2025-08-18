@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Task Gallery - OSS Batch Processor</title>
+    <title>Task Gallery - OSS at Night</title>
     <style>
         * {
             margin: 0;
@@ -13,27 +13,38 @@
         
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background: #f9fafb;
-            color: #1f2937;
+            background: #0a0a0a;
+            background-image: 
+                radial-gradient(ellipse at top, rgba(59, 130, 246, 0.1) 0%, transparent 50%),
+                radial-gradient(ellipse at bottom, rgba(139, 92, 246, 0.05) 0%, transparent 50%);
+            color: #fafafa;
             line-height: 1.6;
+            min-height: 100vh;
         }
         
         .header {
-            background: #000;
+            background: rgba(10, 10, 10, 0.8);
+            backdrop-filter: blur(10px);
             color: #fff;
             padding: 1.5rem;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+            border-bottom: 1px solid #262626;
         }
         
         .header h1 {
-            font-size: 1.875rem;
+            font-size: 2rem;
             font-weight: 700;
+            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
         
         .controls {
-            background: #fff;
+            background: rgba(23, 23, 23, 0.5);
+            backdrop-filter: blur(10px);
             padding: 1.5rem;
-            border-bottom: 1px solid #e5e7eb;
+            border-bottom: 1px solid #262626;
             display: flex;
             gap: 1rem;
             flex-wrap: wrap;
@@ -48,15 +59,22 @@
         
         .filter-group label {
             font-weight: 500;
-            color: #6b7280;
+            color: #a3a3a3;
         }
         
         select, input[type="text"] {
             padding: 0.5rem 1rem;
-            border: 1px solid #d1d5db;
-            border-radius: 0.375rem;
-            background: #fff;
+            border: 1px solid #262626;
+            border-radius: 0.5rem;
+            background: #171717;
+            color: #fafafa;
             font-size: 0.875rem;
+        }
+        
+        select:focus, input[type="text"]:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
         }
         
         .gallery {
@@ -67,23 +85,25 @@
         }
         
         .task-card {
-            background: #fff;
-            border: 1px solid #e5e7eb;
-            border-radius: 0.5rem;
+            background: rgba(23, 23, 23, 0.5);
+            backdrop-filter: blur(10px);
+            border: 1px solid #262626;
+            border-radius: 0.75rem;
             overflow: hidden;
             transition: all 0.2s;
             cursor: pointer;
         }
         
         .task-card:hover {
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(59, 130, 246, 0.2);
+            transform: translateY(-4px);
+            border-color: #3b82f6;
         }
         
         .task-header {
             padding: 1rem;
-            border-bottom: 1px solid #e5e7eb;
-            background: #f9fafb;
+            border-bottom: 1px solid #262626;
+            background: rgba(31, 31, 31, 0.5);
         }
         
         .task-type {
@@ -96,15 +116,15 @@
             margin-bottom: 0.5rem;
         }
         
-        .type-search { background: #dbeafe; color: #1e40af; }
-        .type-create { background: #d1fae5; color: #065f46; }
-        .type-process { background: #fef3c7; color: #92400e; }
-        .type-code { background: #e9d5ff; color: #6b21a8; }
-        .type-chain { background: #fce7f3; color: #9f1239; }
+        .type-search { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
+        .type-create { background: rgba(34, 197, 94, 0.2); color: #22c55e; border: 1px solid rgba(34, 197, 94, 0.3); }
+        .type-process { background: rgba(251, 191, 36, 0.2); color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.3); }
+        .type-code { background: rgba(139, 92, 246, 0.2); color: #a78bfa; border: 1px solid rgba(139, 92, 246, 0.3); }
+        .type-chain { background: rgba(236, 72, 153, 0.2); color: #ec4899; border: 1px solid rgba(236, 72, 153, 0.3); }
         
         .task-id {
             font-size: 0.875rem;
-            color: #6b7280;
+            color: #a3a3a3;
             font-family: monospace;
         }
         
@@ -116,19 +136,19 @@
         
         .task-content-preview {
             font-size: 0.875rem;
-            color: #4b5563;
+            color: #e5e5e5;
             line-height: 1.5;
         }
         
         .task-footer {
             padding: 1rem;
-            border-top: 1px solid #e5e7eb;
-            background: #f9fafb;
+            border-top: 1px solid #262626;
+            background: rgba(31, 31, 31, 0.5);
             display: flex;
             justify-content: space-between;
             align-items: center;
             font-size: 0.75rem;
-            color: #6b7280;
+            color: #a3a3a3;
         }
         
         .status-badge {
@@ -137,10 +157,10 @@
             font-weight: 600;
         }
         
-        .status-completed { background: #d1fae5; color: #065f46; }
-        .status-failed { background: #fee2e2; color: #991b1b; }
-        .status-processing { background: #dbeafe; color: #1e40af; }
-        .status-pending { background: #f3f4f6; color: #6b7280; }
+        .status-completed { background: rgba(34, 197, 94, 0.2); color: #22c55e; border: 1px solid rgba(34, 197, 94, 0.3); }
+        .status-failed { background: rgba(239, 68, 68, 0.2); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); }
+        .status-processing { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
+        .status-pending { background: rgba(163, 163, 163, 0.2); color: #a3a3a3; border: 1px solid rgba(163, 163, 163, 0.3); }
         
         .modal {
             display: none;
@@ -149,7 +169,8 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0,0,0,0.5);
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(5px);
             z-index: 1000;
             padding: 2rem;
             overflow-y: auto;
@@ -162,21 +183,25 @@
         }
         
         .modal-content {
-            background: #fff;
-            border-radius: 0.5rem;
+            background: rgba(23, 23, 23, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid #262626;
+            border-radius: 0.75rem;
             max-width: 900px;
             width: 100%;
             max-height: 90vh;
             overflow-y: auto;
             position: relative;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
         }
         
         .modal-header {
             padding: 1.5rem;
-            border-bottom: 1px solid #e5e7eb;
+            border-bottom: 1px solid #262626;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            background: rgba(31, 31, 31, 0.5);
         }
         
         .modal-body {
@@ -188,11 +213,12 @@
             border: none;
             font-size: 1.5rem;
             cursor: pointer;
-            color: #6b7280;
+            color: #a3a3a3;
+            transition: color 0.2s;
         }
         
         .close-button:hover {
-            color: #1f2937;
+            color: #fafafa;
         }
         
         .result-section {
@@ -203,25 +229,26 @@
             font-size: 1rem;
             font-weight: 600;
             margin-bottom: 0.5rem;
-            color: #1f2937;
+            color: #fafafa;
         }
         
         .result-content {
-            background: #f9fafb;
-            border: 1px solid #e5e7eb;
-            border-radius: 0.375rem;
+            background: #171717;
+            border: 1px solid #262626;
+            border-radius: 0.5rem;
             padding: 1rem;
             font-family: monospace;
             font-size: 0.875rem;
             white-space: pre-wrap;
             max-height: 300px;
             overflow-y: auto;
+            color: #e5e5e5;
         }
         
         .empty-state {
             text-align: center;
             padding: 4rem 2rem;
-            color: #6b7280;
+            color: #a3a3a3;
         }
         
         .empty-state h2 {
@@ -234,8 +261,9 @@
             grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
             gap: 1rem;
             padding: 1.5rem;
-            background: #fff;
-            border-bottom: 1px solid #e5e7eb;
+            background: rgba(23, 23, 23, 0.5);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid #262626;
         }
         
         .stat-card {
@@ -245,33 +273,97 @@
         .stat-value {
             font-size: 2rem;
             font-weight: 700;
-            color: #1f2937;
+            background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
         
         .stat-label {
             font-size: 0.875rem;
-            color: #6b7280;
+            color: #a3a3a3;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
         }
         
         .export-button {
             padding: 0.5rem 1rem;
-            background: #000;
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
             color: #fff;
             border: none;
-            border-radius: 0.375rem;
+            border-radius: 0.5rem;
             cursor: pointer;
             font-weight: 500;
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+            transition: all 0.2s;
         }
         
         .export-button:hover {
-            background: #1f2937;
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            box-shadow: 0 0 25px rgba(59, 130, 246, 0.5);
+            transform: translateY(-1px);
+        }
+        
+        /* Custom Scrollbar Styling */
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: rgba(23, 23, 23, 0.5);
+            border-radius: 5px;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+            border-radius: 5px;
+            border: 2px solid rgba(23, 23, 23, 0.5);
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+        }
+        
+        /* Firefox scrollbar support */
+        * {
+            scrollbar-width: thin;
+            scrollbar-color: #3b82f6 rgba(23, 23, 23, 0.5);
+        }
+        
+        /* Modal content specific scrollbar for better visibility */
+        .modal-content ::-webkit-scrollbar-track {
+            background: #171717;
+        }
+        
+        .modal-content ::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 100%);
+            border: 1px solid #262626;
+        }
+        
+        .result-content::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .result-content::-webkit-scrollbar-track {
+            background: #0a0a0a;
+            border-radius: 4px;
+        }
+        
+        .result-content::-webkit-scrollbar-thumb {
+            background: rgba(59, 130, 246, 0.6);
+            border-radius: 4px;
+        }
+        
+        .result-content::-webkit-scrollbar-thumb:hover {
+            background: rgba(59, 130, 246, 0.8);
         }
     </style>
 </head>
 <body>
     <div class="header">
-        <h1>Task Gallery</h1>
-        <p style="margin-top: 0.5rem; opacity: 0.8;">View completed tasks from GUI and CLI databases</p>
+        <h1>🌙 OSS at Night - Task Gallery</h1>
+        <p style="margin-top: 0.5rem; opacity: 0.8;">Browse your overnight AI-processed tasks from GUI and CLI</p>
     </div>
     
     <div class="stats" id="stats">

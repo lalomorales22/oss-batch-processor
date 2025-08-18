@@ -1,6 +1,8 @@
-# OSS Batch Processor
+# 🌙 OSS at Night
 
-**Queue tasks during the day, wake up to completed work.** An overnight AI assistant that processes ANY task using your local LLM while you sleep.
+**Queue tasks during the day, wake up to completed work.** 
+
+A sleek, dark-themed overnight AI assistant that processes ANY task using your local LLM while you sleep. Now featuring a professional midnight interface designed for night-time productivity.
 
 ![Python](https://img.shields.io/badge/python-3.8+-blue.svg)
 ![Ollama](https://img.shields.io/badge/ollama-compatible-green.svg)
@@ -13,14 +15,15 @@
 
 
 ## The Core Concept
-The OSS Batch Processor solves a simple but frustrating problem: local AI models are powerful but slow. Instead of waiting for each task to complete, this app lets you queue up multiple tasks throughout your day and then process them all at once while you sleep.
+**OSS at Night** solves a simple but frustrating problem: local AI models are powerful but slow. Instead of waiting for each task to complete, this app lets you queue up multiple tasks throughout your day and then process them all at once while you sleep.
 
-Think of it like a print queue, but for AI tasks. It's designed to never time out, making it perfect for complex jobs that might take hours. You can add tasks from any device on your network—phone, tablet, or laptop—and wake up to the completed work.
+Think of it like a print queue, but for AI tasks. With its new dark theme optimized for nighttime use, it's designed to never time out, making it perfect for complex jobs that might take hours. You can add tasks from any device on your network—phone, tablet, or laptop—and wake up to the completed work.
 
-## Key Features
+## ✨ Key Features
 
+- **🌑 Dark Theme Interface**: Professional midnight-inspired design that's easy on the eyes during late-night sessions.
 - **Never Times Out**: Built from the ground up for slow, local models that need hours to run.
-- **Dual Interfaces**: A modern web GUI for easy access and a powerful CLI for automation and power users.
+- **Dual Interfaces**: A stunning dark-themed web GUI for easy access and a powerful CLI for automation and power users.
 - **Phone & Tablet Access**: Queue tasks from anywhere on your network with a mobile-responsive interface.
 - **Universal Task Engine**: Handles a wide variety of tasks:
   - **search**: In-depth research and report generation.
@@ -30,7 +33,7 @@ Think of it like a print queue, but for AI tasks. It's designed to never time ou
   - **chain**: Execute multi-step workflows where the output of one step feeds into the next.
 - **Web Search Integration**: Optionally uses Serper or Tavily APIs to incorporate real-time information into any task.
 - **Full File Management**: A complete file CRUD (Create, Read, Update, Delete) plugin with over 15 operations for managing your workspace.
-- **Visual Gallery**: A beautiful, filterable gallery view at `/gallery` to browse, inspect, and export completed tasks from both GUI and CLI databases.
+- **Visual Gallery**: A stunning dark-themed, filterable gallery view at `/gallery` to browse, inspect, and export completed tasks from both GUI and CLI databases.
 - **100% Local & Private**: Your data never leaves your machine (unless you enable the optional web search).
 
 ## Quick Start Guide
@@ -39,8 +42,8 @@ Think of it like a print queue, but for AI tasks. It's designed to never time ou
 
 ```bash
 # Clone the repository
-git clone https://github.com/lalomorales22/oss-batch-processor
-cd oss-batch-processor
+git clone https://github.com/lalomorales22/oss-at-night
+cd oss-at-night
 
 # We recommend 'uv' for fast package management
 # Install uv if you don't have it:
@@ -231,13 +234,23 @@ If web search isn't working:
 - Make sure your `.env` file exists and contains your actual API key, not the placeholder text.
 - Restart the application (or Docker container) after editing the `.env` file.
 
+## 🎨 Design Philosophy
+
+**OSS at Night** features a carefully crafted dark theme with:
+- Deep black backgrounds with subtle blue gradient overlays
+- Vibrant accent colors for improved visibility
+- Glassmorphic effects with backdrop blur for a modern feel
+- Smooth animations and transitions
+- Professional color-coded task status indicators
+- Eye-friendly contrast ratios for extended nighttime use
+
 ## Project Information
 
 ### Project Structure
 
 ```
-oss-batch-processor/
-├── obp-GUI.py              # Main Web interface application
+oss-at-night/
+├── obp-GUI.py              # Main Web interface with dark theme
 ├── obp-CLI.py              # Main Command-line interface
 ├── processor_config.yaml   # Global configuration for the processor
 ├── task_configs/           # Directory for custom task workflow definitions

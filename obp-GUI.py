@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Universal Task Processor - Complete Flask GUI Application
+OSS at Night - Overnight AI Assistant
 Single file with web interface for local network access
 Run: python task_processor_gui.py
 Access: http://your-ip:5001
@@ -85,7 +85,7 @@ HTML_TEMPLATE = '''
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Task Processor</title>
+    <title>OSS at Night - Overnight AI Assistant</title>
     <style>
         * {
             margin: 0;
@@ -94,27 +94,31 @@ HTML_TEMPLATE = '''
         }
         
         :root {
-            --background: #ffffff;
-            --foreground: #000000;
-            --muted: #f9fafb;
-            --muted-foreground: #6b7280;
-            --border: #e5e7eb;
-            --input: #ffffff;
-            --primary: #000000;
+            --background: #0a0a0a;
+            --foreground: #fafafa;
+            --muted: #171717;
+            --muted-foreground: #a3a3a3;
+            --border: #262626;
+            --input: #171717;
+            --primary: #3b82f6;
             --primary-foreground: #ffffff;
-            --secondary: #f3f4f6;
-            --secondary-foreground: #1f2937;
-            --accent: #f3f4f6;
-            --accent-foreground: #1f2937;
-            --destructive: #ef4444;
+            --secondary: #1f1f1f;
+            --secondary-foreground: #e5e5e5;
+            --accent: #262626;
+            --accent-foreground: #fafafa;
+            --destructive: #dc2626;
             --destructive-foreground: #ffffff;
-            --ring: #000000;
-            --radius: 0.5rem;
+            --ring: #3b82f6;
+            --radius: 0.75rem;
+            --glow: rgba(59, 130, 246, 0.5);
         }
         
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
             background: var(--background);
+            background-image: 
+                radial-gradient(ellipse at top, rgba(59, 130, 246, 0.1) 0%, transparent 50%),
+                radial-gradient(ellipse at bottom, rgba(139, 92, 246, 0.05) 0%, transparent 50%);
             color: var(--foreground);
             line-height: 1.5;
             min-height: 100vh;
@@ -133,9 +137,13 @@ HTML_TEMPLATE = '''
         }
         
         h1 {
-            font-size: 2rem;
+            font-size: 2.5rem;
             font-weight: 700;
             margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
         
         .subtitle {
@@ -156,11 +164,67 @@ HTML_TEMPLATE = '''
             }
         }
         
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.7;
+            }
+        }
+        
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* Custom Scrollbar Styling */
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: rgba(23, 23, 23, 0.5);
+            border-radius: 5px;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+            border-radius: 5px;
+            border: 2px solid rgba(23, 23, 23, 0.5);
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+        }
+        
+        /* Firefox scrollbar */
+        * {
+            scrollbar-width: thin;
+            scrollbar-color: #3b82f6 rgba(23, 23, 23, 0.5);
+        }
+        
         .card {
-            background: var(--background);
+            background: rgba(23, 23, 23, 0.5);
+            backdrop-filter: blur(10px);
             border: 1px solid var(--border);
             border-radius: var(--radius);
             padding: 1.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+            animation: fadeIn 0.3s ease-out;
         }
         
         .card-header {
@@ -197,12 +261,13 @@ HTML_TEMPLATE = '''
             font-size: 0.875rem;
             transition: border-color 0.15s;
             background: var(--input);
+            color: var(--foreground);
         }
         
         input:focus, textarea:focus, select:focus {
             outline: none;
             border-color: var(--ring);
-            box-shadow: 0 0 0 3px rgba(0,0,0,0.05);
+            box-shadow: 0 0 0 3px var(--glow);
         }
         
         textarea {
@@ -226,14 +291,16 @@ HTML_TEMPLATE = '''
         }
         
         .button-primary {
-            background: var(--primary);
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
             color: var(--primary-foreground);
-            border-color: var(--primary);
+            border: none;
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
         }
         
         .button-primary:hover {
-            background: var(--foreground);
-            opacity: 0.9;
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            box-shadow: 0 0 25px rgba(59, 130, 246, 0.5);
+            transform: translateY(-1px);
         }
         
         .button-secondary {
@@ -293,9 +360,10 @@ HTML_TEMPLATE = '''
         }
         
         .task-type-btn.active {
-            background: var(--foreground);
-            color: var(--background);
-            border-color: var(--foreground);
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+            border-color: #3b82f6;
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.3);
         }
         
         .stats-grid {
@@ -306,15 +374,21 @@ HTML_TEMPLATE = '''
         }
         
         .stat-card {
-            background: var(--secondary);
+            background: linear-gradient(135deg, rgba(31, 31, 31, 0.8) 0%, rgba(38, 38, 38, 0.6) 100%);
+            backdrop-filter: blur(10px);
             padding: 1rem;
             border-radius: calc(var(--radius) - 2px);
             text-align: center;
+            border: 1px solid var(--border);
         }
         
         .stat-value {
             font-size: 2rem;
             font-weight: 700;
+            background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
         
         .stat-label {
@@ -328,6 +402,8 @@ HTML_TEMPLATE = '''
             border: 1px solid var(--border);
             border-radius: var(--radius);
             overflow: hidden;
+            background: rgba(23, 23, 23, 0.3);
+            backdrop-filter: blur(5px);
         }
         
         .task-item {
@@ -386,23 +462,28 @@ HTML_TEMPLATE = '''
         }
         
         .badge-pending {
-            background: #fef3c7;
-            color: #92400e;
+            background: rgba(251, 191, 36, 0.2);
+            color: #fbbf24;
+            border: 1px solid rgba(251, 191, 36, 0.3);
         }
         
         .badge-processing {
-            background: #dbeafe;
-            color: #1e40af;
+            background: rgba(59, 130, 246, 0.2);
+            color: #60a5fa;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            animation: pulse 2s infinite;
         }
         
         .badge-completed {
-            background: #d1fae5;
-            color: #065f46;
+            background: rgba(34, 197, 94, 0.2);
+            color: #22c55e;
+            border: 1px solid rgba(34, 197, 94, 0.3);
         }
         
         .badge-failed {
-            background: #fee2e2;
-            color: #991b1b;
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.3);
         }
         
         .empty-state {
@@ -438,16 +519,18 @@ HTML_TEMPLATE = '''
             position: fixed;
             bottom: 2rem;
             right: 2rem;
-            background: var(--foreground);
-            color: var(--background);
+            background: rgba(31, 31, 31, 0.95);
+            color: var(--foreground);
             padding: 1rem 1.5rem;
             border-radius: var(--radius);
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            border: 1px solid var(--border);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
             transform: translateY(100px);
             opacity: 0;
             transition: all 0.3s;
             z-index: 1000;
             max-width: 400px;
+            backdrop-filter: blur(10px);
         }
         
         .toast.show {
@@ -488,8 +571,8 @@ HTML_TEMPLATE = '''
         }
         
         .tab-trigger.active {
-            color: var(--foreground);
-            border-bottom-color: var(--foreground);
+            color: #3b82f6;
+            border-bottom-color: #3b82f6;
         }
         
         .tab-content {
@@ -501,19 +584,21 @@ HTML_TEMPLATE = '''
         }
         
         .server-info {
-            background: var(--secondary);
+            background: linear-gradient(135deg, rgba(31, 31, 31, 0.8) 0%, rgba(38, 38, 38, 0.6) 100%);
             padding: 1rem;
             border-radius: var(--radius);
             margin-bottom: 2rem;
             font-family: monospace;
             font-size: 0.875rem;
+            border: 1px solid var(--border);
+            backdrop-filter: blur(10px);
         }
         
         .loader {
             width: 1rem;
             height: 1rem;
-            border: 2px solid var(--border);
-            border-top-color: var(--foreground);
+            border: 2px solid rgba(59, 130, 246, 0.2);
+            border-top-color: #3b82f6;
             border-radius: 50%;
             animation: spin 0.6s linear infinite;
             display: inline-block;
@@ -540,8 +625,8 @@ HTML_TEMPLATE = '''
 <body>
     <div class="container">
         <header>
-            <h1>Task Processor</h1>
-            <p class="subtitle">Queue tasks for AI processing • Accessible at {{ server_info }}</p>
+            <h1>🌙 OSS at Night</h1>
+            <p class="subtitle">Queue tasks during the day, wake up to completed work • Accessible at {{ server_info }}</p>
         </header>
         
         <div class="server-info">
