@@ -1,4 +1,6 @@
 # 🌙 OSS at Night
+<img width="1185" height="1037" alt="Screenshot 2025-08-18 at 12 01 57 AM" src="https://github.com/user-attachments/assets/b768c716-bd5f-406b-b528-20aecb3a3dfb" />
+<img width="1791" height="1188" alt="Screenshot 2025-08-18 at 12 02 06 AM" src="https://github.com/user-attachments/assets/33fd47b5-855e-4de6-89ac-4882329cd73d" />
 
 **Queue tasks during the day, wake up to completed work.** 
 
@@ -9,7 +11,7 @@ A sleek, dark-themed overnight AI assistant that processes ANY task using your l
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Docker](https://img.shields.io/badge/docker-ready-blue.svg)
 
-<img width="626" height="866" alt="Screenshot 2025-08-06 at 2 22 36 PM" src="https://github.com/user-attachments/assets/062eeeea-a9b2-44be-8d1b-90943256a85d" />
+
 
 
 
